@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOJIFAM · Mega Super</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Epilogue:wght@300;400;500;600&family=Epilogue+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rojo: #E31837;
+  --rojo-dark: #b01028;
+  --amarillo: #F5A623;
+  --negro: #080b10;
+  --panel: #0e1218;
+  --panel2: #141820;
+  --borde: #1e2430;
+  --borde2: #252d3a;
+  --texto: #c8d0e0;
+  --texto-dim: #5a6478;
+  --blanco: #eef2ff;
+  --pendiente: #E31837;
+  --en-curso: #3b82f6;
+  --en-espera: #F5A623;
+  --completado: #22c55e;
+  --cancelado: #475569;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Epilogue', sans-serif;
+  background: var(--negro);
+  color: var(--texto);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── LOGIN ─── */
+#pantalla-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--negro);
+  position: relative;
+}
+
+#pantalla-login::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(227,24,55,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.login-box {
+  background: var(--panel);
+  border: 1px solid var(--borde2);
+  border-radius: 18px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 1;
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-marca {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--blanco);
+  letter-spacing: 2px;
+}
+
+.login-sub {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: var(--rojo);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.login-divider {
+  height: 1px;
+  background: var(--borde);
+  margin: 24px 0;
+}
+
+.login-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--texto-dim);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.login-select, .login-input {
+  width: 100%;
+  background: var(--negro);
+  border: 1px solid var(--borde2);
+  border-radius: 9px;
+  padding: 12px 14px;
+  color: var(--blanco);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.login-select:focus, .login-input:focus { border-color: var(--rojo); }
+.login-select option { background: var(--panel); }
+
+.login-btn {
+  width: 100%;
+  background: var(--rojo);
+  color: white;
+  border: none;
+  border-radius: 9px;
+  padding: 13px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 4px;
+}
+
+.login-btn:hover { background: var(--rojo-dark); }
+
+.login-error {
+  color: var(--rojo);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 12px;
+  min-height: 18px;
+}
+
+/* ─── APP ─── */
+#pantalla-app { display: none; min-height: 100vh; flex-direction: column; }
+
+/* HEADER */
+.header {
+  height: 60px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--borde);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.h-marca {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--blanco);
+}
+
+.h-sep { width: 1px; height: 28px; background: var(--borde2); }
+
+.h-nav { display: flex; gap: 4px; flex: 1; }
+
+.h-nav-btn {
+  background: none;
+  border: none;
+  color: var(--texto-dim);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.h-nav-btn:hover { background: var(--borde); color: var(--blanco); }
+.h-nav-btn.activo { background: rgba(227,24,55,0.15); color: var(--rojo); font-weight: 600; }
+
+.h-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
+.h-usuario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.h-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--rojo);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.h-nombre { font-size: 13px; font-weight: 500; color: var(--blanco); }
+.h-rol {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--texto-dim);
+}
+
+.btn-salir {
+  background: none;
+  border: 1px solid var(--borde2);
+  color: var(--texto-dim);
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Epilogue', sans-serif;
+}
+
+.btn-salir:hover { border-color: var(--rojo); color: var(--rojo); }
+
+/* ─── PÁGINAS ─── */
+.pagina { display: none; padding: 20px; max-width: 1300px; margin: 0 auto; width: 100%; }
+.pagina.activa { display: block; }
+
+/* ─── STATS ─── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.stat.s-total::after { background: var(--borde2); }
+.stat.s-pend::after { background: var(--pendiente); }
+.stat.s-curso::after { background: var(--en-curso); }
+.stat.s-espera::after { background: var(--en-espera); }
+.stat.s-comp::after { background: var(--completado); }
+
+.stat-n {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--blanco);
+}
+
+.stat.s-pend .stat-n { color: var(--pendiente); }
+.stat.s-curso .stat-n { color: var(--en-curso); }
+.stat.s-espera .stat-n { color: var(--en-espera); }
+.stat.s-comp .stat-n { color: var(--completado); }
+
+.stat-l {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--texto-dim);
+  margin-top: 4px;
+}
+
+/* ─── TOOLBAR ─── */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.f-btn {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  color: var(--texto-dim);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Epilogue', sans-serif;
+}
+
+.f-btn:hover { border-color: var(--rojo); color: var(--blanco); }
+.f-btn.on { background: rgba(227,24,55,0.12); border-color: var(--rojo); color: var(--rojo); font-weight: 600; }
+
+.search-box {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  padding: 6px 14px;
+}
+
+.search-box input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--blanco);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 12px;
+  width: 160px;
+}
+
+.search-box input::placeholder { color: var(--texto-dim); }
+
+.btn-primary {
+  background: var(--rojo);
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-primary:hover { background: var(--rojo-dark); }
+
+/* ─── TABLA ─── */
+.tabla-wrap {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+thead { background: rgba(0,0,0,0.25); }
+
+th {
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--texto-dim);
+}
+
+td {
+  padding: 13px 14px;
+  border-top: 1px solid var(--borde);
+  vertical-align: middle;
+}
+
+tr.fila { cursor: pointer; transition: background 0.12s; }
+tr.fila:hover { background: rgba(255,255,255,0.025); }
+
+.tk { font-family: 'Epilogue Mono', monospace; font-size: 12px; color: var(--rojo); font-weight: 500; }
+.t-bold { font-weight: 500; color: var(--blanco); font-size: 13px; }
+.t-sub { font-size: 11px; color: var(--texto-dim); margin-top: 1px; }
+.t-desc { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--texto-dim); font-size: 12px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+.b-pend { background: rgba(227,24,55,.14); color: var(--pendiente); }
+.b-pend .dot { background: var(--pendiente); animation: blink 1.4s infinite; }
+.b-curso { background: rgba(59,130,246,.14); color: var(--en-curso); }
+.b-curso .dot { background: var(--en-curso); animation: blink 1.4s infinite; }
+.b-espera { background: rgba(245,166,35,.14); color: var(--en-espera); }
+.b-espera .dot { background: var(--en-espera); }
+.b-comp { background: rgba(34,197,94,.14); color: var(--completado); }
+.b-comp .dot { background: var(--completado); }
+.b-cancel { background: rgba(71,85,105,.14); color: var(--cancelado); }
+.b-cancel .dot { background: var(--cancelado); }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.tech-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--texto);
+}
+
+.tech-av {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--borde2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--blanco);
+  flex-shrink: 0;
+}
+
+.acc-btns { display: flex; gap: 5px; }
+
+.btn-sm {
+  background: var(--borde);
+  border: none;
+  color: var(--texto-dim);
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: 'Epilogue', sans-serif;
+}
+
+.btn-sm:hover { background: var(--rojo); color: white; }
+.btn-sm.verde:hover { background: var(--completado); color: white; }
+.btn-sm.morado:hover { background: var(--en-espera); color: white; }
+
+.empty {
+  padding: 52px 24px;
+  text-align: center;
+  color: var(--texto-dim);
+}
+
+.empty-ico { font-size: 36px; margin-bottom: 10px; }
+
+/* ─── ESTADÍSTICAS ─── */
+.stats-page-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.stats-card {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.sc-titulo {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--blanco);
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+
+/* Técnico card */
+.tec-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tec-av-lg {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--rojo);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.tec-info { flex: 1; }
+.tec-nombre { font-weight: 600; color: var(--blanco); font-size: 14px; }
+.tec-nums { font-size: 11px; color: var(--texto-dim); margin-top: 2px; }
+
+.tec-barra-wrap { flex: 2; }
+
+.tec-barra-bg {
+  height: 6px;
+  background: var(--borde2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tec-barra-fill {
+  height: 100%;
+  background: var(--rojo);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.tec-total {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--blanco);
+  text-align: right;
+  min-width: 32px;
+}
+
+/* Mega chart */
+.mega-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.mega-nombre {
+  width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--texto);
+  flex-shrink: 0;
+}
+
+.mega-barra-bg {
+  flex: 1;
+  height: 8px;
+  background: var(--borde2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mega-barra-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rojo), var(--amarillo));
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.mega-cnt {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--blanco);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* ─── MODAL ─── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.overlay.open { display: flex; }
+
+.modal {
+  background: var(--panel2);
+  border: 1px solid var(--borde2);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.m-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--borde);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--panel2);
+  z-index: 1;
+}
+
+.m-titulo {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--blanco);
+}
+
+.m-close {
+  background: none;
+  border: none;
+  color: var(--texto-dim);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.m-body { padding: 22px; }
+.m-footer {
+  padding: 14px 22px;
+  border-top: 1px solid var(--borde);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Form */
+.fg { margin-bottom: 14px; }
+.fg label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--texto-dim);
+  margin-bottom: 6px;
+}
+
+.fg input, .fg select, .fg textarea {
+  width: 100%;
+  background: var(--negro);
+  border: 1px solid var(--borde2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--blanco);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--rojo); }
+.fg textarea { resize: vertical; min-height: 72px; }
+.fg select option { background: var(--panel2); }
+
+.fg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Upload */
+.upload-z {
+  border: 2px dashed var(--borde2);
+  border-radius: 10px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 14px;
+}
+
+.upload-z:hover { border-color: var(--rojo); background: rgba(227,24,55,.04); }
+.upload-z.loading { border-color: var(--en-curso); background: rgba(59,130,246,.04); }
+
+.upload-ico { font-size: 32px; margin-bottom: 6px; }
+.upload-txt { font-size: 12px; color: var(--texto-dim); }
+.upload-txt strong { color: var(--blanco); }
+
+.spin {
+  display: none;
+  width: 24px; height: 24px;
+  border: 3px solid var(--borde2);
+  border-top-color: var(--en-curso);
+  border-radius: 50%;
+  animation: rot 0.7s linear infinite;
+  margin: 0 auto 6px;
+}
+
+@keyframes rot { to { transform:rotate(360deg); } }
+
+.prev-img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  margin-bottom: 12px;
+  display: none;
+}
+
+/* Detalle */
+.det-img { width:100%; border-radius:8px; border:1px solid var(--borde); margin-bottom:14px; }
+.det-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+.det-campo { padding: 12px 0; border-bottom: 1px solid var(--borde); }
+.det-campo:last-child { border-bottom: none; }
+.det-etq { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--texto-dim); margin-bottom:4px; }
+.det-val { font-size:13px; color:var(--blanco); }
+
+.sel-estado {
+  background: var(--negro);
+  border: 1px solid var(--borde2);
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: var(--blanco);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Cierre técnico */
+.cierre-box {
+  background: rgba(34,197,94,.06);
+  border: 1px solid rgba(34,197,94,.2);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.cierre-titulo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--completado);
+  margin-bottom: 12px;
+}
+
+.btn-sec {
+  background: none;
+  border: 1px solid var(--borde2);
+  color: var(--texto-dim);
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.btn-sec:hover { border-color: var(--texto-dim); color: var(--blanco); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--panel2);
+  border: 1px solid var(--borde2);
+  color: var(--blanco);
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  z-index: 200;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all 0.25s;
+  max-width: 300px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* Mis casos (técnico) */
+.mis-casos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.mis-casos-titulo {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--blanco);
+}
+
+/* Responsive */
+@media(max-width:900px) {
+  .stats-row { grid-template-columns: repeat(3,1fr); }
+  .stats-page-grid { grid-template-columns: 1fr; }
+  th:nth-child(5),td:nth-child(5),
+  th:nth-child(4),td:nth-child(4) { display:none; }
+}
+
+@media(max-width:600px) {
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .h-nav-btn { font-size:11px; padding:5px 8px; }
+  .pagina { padding:12px; }
+  .fg-grid { grid-template-columns:1fr; }
+  .det-grid { grid-template-columns:1fr; }
+  .search-box { display:none; }
+  th:nth-child(6),td:nth-child(6) { display:none; }
+}
+
+/* ─── UBICACIÓN Y TÉCNICO CERCANO ─── */
+.loc-panel {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.loc-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--texto-dim);
+  margin-bottom: 10px;
+}
+
+.tec-loc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--borde);
+}
+.tec-loc-row:last-child { border-bottom: none; }
+
+.tec-loc-av {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.tec-loc-info { flex: 1; }
+.tec-loc-nombre { font-size: 13px; color: var(--blanco); font-weight: 600; }
+.tec-loc-dist { font-size: 11px; color: var(--texto-dim); margin-top: 2px; }
+
+.tec-loc-btn {
+  background: var(--rojo);
+  border: none;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.tec-loc-btn:hover { opacity: 0.85; }
+.tec-loc-btn.secondary {
+  background: var(--borde2);
+  color: var(--texto);
+}
+
+/* Cercano highlight */
+.cercano-badge {
+  background: rgba(245,166,35,.15);
+  color: var(--en-espera);
+  border: 1px solid rgba(245,166,35,.3);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Notif badge */
+.notif-badge {
+  background: var(--rojo);
+  color: white;
+  border-radius: 50%;
+  width: 16px; height: 16px;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  font-family: 'Syne', sans-serif;
+}
+
+/* Modal técnico cercano */
+.cercano-modal-header {
+  background: rgba(245,166,35,.08);
+  border: 1px solid rgba(245,166,35,.2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.cercano-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--en-espera);
+  margin-bottom: 6px;
+}
+
+.cercano-tec-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--blanco);
+}
+
+.cercano-dist {
+  font-size: 12px;
+  color: var(--texto-dim);
+  margin-top: 3px;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="pantalla-login">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-marca">SOJIFAM</div>
+      <div class="login-sub">Emergencias · Mega Super</div>
+    </div>
+    <div class="login-divider"></div>
+    <label class="login-label">Usuario</label>
+    <select class="login-select" id="sel-usuario">
+      <option value="">Seleccionar...</option>
+      <option value="mauricio">Mauricio</option>
+      <option value="bayardo">Bayardo</option>
+      <option value="alejandro">Alejandro</option>
+      <option value="carlos">Carlos Sosa</option>
+      <option value="gerber">Gerber</option>
+    </select>
+    <label class="login-label">Contraseña</label>
+    <input class="login-input" type="password" id="inp-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">INGRESAR</button>
+    <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="pantalla-app">
+
+  <header class="header">
+    <div class="h-marca">SOJIFAM</div>
+    <div class="h-sep"></div>
+    <nav class="h-nav" id="h-nav"></nav>
+    <div class="h-right">
+      <div class="h-usuario">
+        <div class="h-avatar" id="h-avatar"></div>
+        <div>
+          <div class="h-nombre" id="h-nombre"></div>
+          <div class="h-rol" id="h-rol"></div>
+        </div>
+      </div>
+      <button class="btn-salir" onclick="salir()">Salir</button>
+    </div>
+  </header>
+
+  <!-- Dashboard Admin -->
+  <div class="pagina" id="pag-dashboard">
+    <div class="stats-row">
+      <div class="stat s-total"><div class="stat-n" id="s-total">0</div><div class="stat-l">Total</div></div>
+      <div class="stat s-pend"><div class="stat-n" id="s-pend">0</div><div class="stat-l">Pendiente</div></div>
+      <div class="stat s-curso"><div class="stat-n" id="s-curso">0</div><div class="stat-l">En Curso</div></div>
+      <div class="stat s-espera"><div class="stat-n" id="s-espera">0</div><div class="stat-l">En Espera</div></div>
+      <div class="stat s-comp"><div class="stat-n" id="s-comp">0</div><div class="stat-l">Completado</div></div>
+    </div>
+
+    <!-- Panel de ubicaciones (solo admin) -->
+    <div id="loc-panel-admin" style="display:none">
+      <div class="loc-title">📍 Ubicación de técnicos en tiempo real</div>
+      <div id="tec-locs-list"></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="f-btn on" onclick="filtrar('todos',this)">Todos</button>
+      <button class="f-btn" onclick="filtrar('Pendiente',this)">Pendiente</button>
+      <button class="f-btn" onclick="filtrar('En Curso',this)">En Curso</button>
+      <button class="f-btn" onclick="filtrar('En Espera',this)">En Espera</button>
+      <button class="f-btn" onclick="filtrar('Completado',this)">Completado</button>
+      <div class="search-box">
+        <span style="color:var(--texto-dim);font-size:13px">⌕</span>
+        <input type="text" placeholder="Buscar tiquete o tienda..." id="buscar-inp" oninput="renderTabla()">
+      </div>
+      <button class="btn-primary" onclick="abrirNuevo()">＋ Nueva Emergencia</button>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tiquete</th>
+            <th>Tienda</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+            <th>Técnico</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty-tabla" style="display:none">
+        <div class="empty-ico">📋</div>
+        <div>Sin emergencias registradas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mis Casos (técnico) -->
+  <div class="pagina" id="pag-miscasos">
+    <div class="mis-casos-header">
+      <div class="mis-casos-titulo" id="mis-casos-titulo">Mis Casos</div>
+    </div>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat s-pend"><div class="stat-n" id="ms-pend">0</div><div class="stat-l">Pendiente</div></div>
+      <div class="stat s-curso"><div class="stat-n" id="ms-curso">0</div><div class="stat-l">En Curso</div></div>
+      <div class="stat s-espera"><div class="stat-n" id="ms-espera">0</div><div class="stat-l">En Espera</div></div>
+      <div class="stat s-comp"><div class="stat-n" id="ms-comp">0</div><div class="stat-l">Completado</div></div>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tiquete</th>
+            <th>Tienda</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-mis"></tbody>
+      </table>
+      <div class="empty" id="empty-mis" style="display:none">
+        <div class="empty-ico">✅</div>
+        <div>No tenés casos asignados actualmente</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="pagina" id="pag-stats">
+    <div class="stats-page-grid">
+      <div class="stats-card">
+        <div class="sc-titulo">Casos por técnico</div>
+        <div id="stats-tecnicos"></div>
+      </div>
+      <div class="stats-card">
+        <div class="sc-titulo">Emergencias por tienda</div>
+        <div id="stats-tiendas"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ubicaciones (admin) -->
+  <div class="pagina" id="pag-ubicaciones">
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--blanco);margin-bottom:16px">Ubicación de Técnicos</div>
+    <div class="stats-card" style="margin-bottom:16px">
+      <div class="loc-title">📡 Posiciones actuales</div>
+      <div id="mapa-tecnicos-lista"></div>
+      <p style="font-size:12px;color:var(--texto-dim);margin-top:14px">⚠️ Los técnicos deben tener la app abierta y haber aceptado compartir ubicación para aparecer aquí.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ MODAL NUEVA EMERGENCIA (solo admin) ═══ -->
+<div class="overlay" id="modal-nuevo">
+  <div class="modal">
+    <div class="m-head">
+      <div class="m-titulo" id="m-nuevo-titulo">Nueva Emergencia</div>
+      <button class="m-close" onclick="cerrar('modal-nuevo')">×</button>
+    </div>
+    <div class="m-body">
+      <!-- Upload tiquete -->
+      <div class="upload-z" id="upload-z" onclick="document.getElementById('fi').click()">
+        <div class="spin" id="spin"></div>
+        <div class="upload-ico" id="u-ico">📷</div>
+        <div class="upload-txt" id="u-txt"><strong>Subí la foto del tiquete</strong><br>IA extrae la información automáticamente</div>
+      </div>
+      <input type="file" id="fi" accept="image/*" style="display:none" onchange="procesarImg(this)">
+      <img id="prev-img" class="prev-img">
+
+      <div class="fg-grid">
+        <div class="fg">
+          <label>N° Tiquete</label>
+          <input type="text" id="f-tk" placeholder="747526">
+        </div>
+        <div class="fg">
+          <label>Fecha y Hora</label>
+          <input type="text" id="f-fh" placeholder="02/06/26 20:15">
+        </div>
+      </div>
+      <div class="fg">
+        <label>Tienda Mega Super</label>
+        <select id="f-tienda" onchange="if(this.value && sesion?.rol==='admin') mostrarSugerenciaCercano(this.value)">
+          <option value="">Seleccionar...</option>
+          <option>Megasuper Atenas</option>
+          <option>Megasuper Alajuela Centro</option>
+          <option>Megasuper Desamparados</option>
+          <option>Megasuper Cartago</option>
+          <option>Megasuper Heredia</option>
+          <option>Megasuper San José Centro</option>
+          <option>Megasuper Tibás</option>
+          <option>Megasuper Curridabat</option>
+          <option>Megasuper Escazú</option>
+          <option>Megasuper Santa Ana</option>
+          <option>Megasuper Puriscal</option>
+          <option>Megasuper Limón</option>
+          <option>Megasuper Liberia</option>
+          <option>Megasuper Pérez Zeledón</option>
+          <option>Megasuper Puntarenas</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Descripción del problema</label>
+        <textarea id="f-desc" placeholder="Describí el problema reportado..."></textarea>
+      </div>
+      <div class="fg-grid">
+        <div class="fg">
+          <label>Solicitante</label>
+          <input type="text" id="f-solic" placeholder="Nombre | Cargo">
+        </div>
+        <div class="fg">
+          <label>Asignar a técnico</label>
+          <select id="f-tec">
+            <option value="">Sin asignar</option>
+            <option value="mauricio">Mauricio</option>
+            <option value="carlos">Carlos Sosa</option>
+            <option value="bayardo">Bayardo</option>
+            <option value="alejandro">Alejandro</option>
+            <option value="gerber">Gerber</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Estado inicial</label>
+        <select id="f-estado">
+          <option value="Pendiente">Pendiente</option>
+          <option value="En Curso">En Curso</option>
+        </select>
+      </div>
+    </div>
+    <div class="m-footer">
+      <button class="btn-sec" onclick="cerrar('modal-nuevo')">Cancelar</button>
+      <button class="btn-primary" onclick="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL DETALLE ═══ -->
+<div class="overlay" id="modal-det">
+  <div class="modal">
+    <div class="m-head">
+      <div class="m-titulo" id="det-titulo">Tiquete</div>
+      <button class="m-close" onclick="cerrar('modal-det')">×</button>
+    </div>
+    <div class="m-body" id="det-body"></div>
+    <div class="m-footer" id="det-footer"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL CIERRE TÉCNICO ═══ -->
+<div class="overlay" id="modal-cierre">
+  <div class="modal">
+    <div class="m-head">
+      <div class="m-titulo">Cerrar Caso</div>
+      <button class="m-close" onclick="cerrar('modal-cierre')">×</button>
+    </div>
+    <div class="m-body">
+      <p style="font-size:13px;color:var(--texto-dim);margin-bottom:16px">Documentá el trabajo realizado antes de cerrar el caso.</p>
+      <div class="fg">
+        <label>Descripción del trabajo realizado</label>
+        <textarea id="c-desc" placeholder="¿Qué se hizo? ¿Cómo se resolvió?..." style="min-height:90px"></textarea>
+      </div>
+      <div class="fg">
+        <label>Foto de evidencia (opcional)</label>
+        <div class="upload-z" id="c-upload-z" onclick="document.getElementById('c-fi').click()" style="padding:20px">
+          <div class="upload-ico" style="font-size:24px;margin-bottom:4px">📸</div>
+          <div class="upload-txt">Tocá para adjuntar foto</div>
+        </div>
+        <input type="file" id="c-fi" accept="image/*" style="display:none" onchange="prevCierre(this)">
+        <img id="c-prev" class="prev-img">
+      </div>
+    </div>
+    <div class="m-footer">
+      <button class="btn-sec" onclick="cerrar('modal-cierre')">Cancelar</button>
+      <button class="btn-primary" style="background:var(--completado)" onclick="confirmarCierre()">✓ Cerrar Caso</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL ESPERA ═══ -->
+<div class="overlay" id="modal-espera">
+  <div class="modal" style="max-width:420px">
+    <div class="m-head">
+      <div class="m-titulo">Poner en Espera</div>
+      <button class="m-close" onclick="cerrar('modal-espera')">×</button>
+    </div>
+    <div class="m-body">
+      <div class="fg">
+        <label>Motivo de la espera</label>
+        <textarea id="e-motivo" placeholder="¿Por qué se pone en espera? (ej: falta de materiales, cliente ausente...)" style="min-height:80px"></textarea>
+      </div>
+    </div>
+    <div class="m-footer">
+      <button class="btn-sec" onclick="cerrar('modal-espera')">Cancelar</button>
+      <button class="btn-primary" style="background:var(--en-espera)" onclick="confirmarEspera()">Confirmar Espera</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ MODAL TÉCNICO CERCANO ═══ -->
+<div class="overlay" id="modal-cercano">
+  <div class="modal" style="max-width:480px">
+    <div class="m-head">
+      <div class="m-titulo">🎯 Técnico más cercano</div>
+      <button class="m-close" onclick="cerrar('modal-cercano')">×</button>
+    </div>
+    <div class="m-body">
+      <div class="cercano-modal-header">
+        <div class="cercano-title">Recomendación IA</div>
+        <div class="cercano-tec-name" id="c-tec-nombre">—</div>
+        <div class="cercano-dist" id="c-tec-dist">Calculando distancia...</div>
+      </div>
+      <p style="font-size:13px;color:var(--texto-dim);margin-bottom:16px">¿Querés asignarlo automáticamente o elegir otro técnico?</p>
+      <div style="display:flex;flex-direction:column;gap:8px" id="c-otros-tecs"></div>
+    </div>
+    <div class="m-footer">
+      <button class="btn-sec" onclick="cerrar('modal-cercano')">Decidir después</button>
+      <button class="btn-primary" onclick="asignarCercano()">✓ Asignar al más cercano</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ══════════════════════════════════════════
+// UBICACIONES DE TIENDAS MEGA SUPER (coords aprox)
+// ══════════════════════════════════════════
+const TIENDAS_COORDS = {
+  'Megasuper Atenas':          { lat: 9.9788,  lng: -84.3854 },
+  'Megasuper Alajuela Centro': { lat: 10.0162, lng: -84.2148 },
+  'Megasuper Desamparados':    { lat: 9.8906,  lng: -84.0694 },
+  'Megasuper Cartago':         { lat: 9.8642,  lng: -83.9194 },
+  'Megasuper Heredia':         { lat: 9.9987,  lng: -84.1194 },
+  'Megasuper San José Centro': { lat: 9.9341,  lng: -84.0876 },
+  'Megasuper Tibás':           { lat: 9.9613,  lng: -84.0862 },
+  'Megasuper Curridabat':      { lat: 9.9127,  lng: -84.0376 },
+  'Megasuper Escazú':          { lat: 9.9213,  lng: -84.1394 },
+  'Megasuper Santa Ana':       { lat: 9.9294,  lng: -84.1876 },
+  'Megasuper Puriscal':        { lat: 9.8494,  lng: -84.3176 },
+  'Megasuper Limón':           { lat: 9.9900,  lng: -83.0362 },
+  'Megasuper Liberia':         { lat: 10.6330, lng: -85.4337 },
+  'Megasuper Pérez Zeledón':   { lat: 9.3664,  lng: -83.6613 },
+  'Megasuper Puntarenas':      { lat: 9.9762,  lng: -84.8313 }
+};
+
+// ══════════════════════════════════════════
+// SISTEMA DE UBICACIÓN EN TIEMPO REAL
+// ══════════════════════════════════════════
+let tecUbicaciones = {}; // { userId: { lat, lng, ts } }
+let cercanoId = null;
+
+function iniciarGeolocalizacion() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.watchPosition(
+    pos => {
+      const uid = sesion?.id;
+      if (!uid) return;
+      tecUbicaciones[uid] = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        ts: Date.now()
+      };
+      // Guardar en storage compartido
+      try {
+        const locs = JSON.parse(localStorage.getItem('sj-mega-locs') || '{}');
+        locs[uid] = tecUbicaciones[uid];
+        localStorage.setItem('sj-mega-locs', JSON.stringify(locs));
+      } catch(e) {}
+    },
+    err => console.log('Geo error:', err),
+    { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
+  );
+}
+
+function cargarUbicaciones() {
+  try {
+    const locs = JSON.parse(localStorage.getItem('sj-mega-locs') || '{}');
+    // Solo mostrar ubicaciones de los últimos 30 minutos
+    const ahora = Date.now();
+    Object.keys(locs).forEach(uid => {
+      if (ahora - locs[uid].ts < 30 * 60 * 1000) {
+        tecUbicaciones[uid] = locs[uid];
+      }
+    });
+  } catch(e) {}
+}
+
+function calcularDistancia(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function encontrarTecnicoCercano(tienda) {
+  cargarUbicaciones();
+  const coords = TIENDAS_COORDS[tienda];
+  if (!coords) return null;
+
+  const tecnicos = ['bayardo','alejandro','gerber','mauricio','carlos'];
+  let mejorTec = null;
+  let mejorDist = Infinity;
+
+  tecnicos.forEach(uid => {
+    const loc = tecUbicaciones[uid];
+    if (!loc) return;
+    const dist = calcularDistancia(coords.lat, coords.lng, loc.lat, loc.lng);
+    if (dist < mejorDist) {
+      mejorDist = dist;
+      mejorTec = { uid, dist, nombre: USUARIOS[uid].nombre };
+    }
+  });
+
+  return mejorTec ? { ...mejorTec, distStr: mejorTec.dist < 1 ? `${Math.round(mejorTec.dist*1000)}m` : `${mejorTec.dist.toFixed(1)}km` } : null;
+}
+
+function mostrarSugerenciaCercano(tienda) {
+  cargarUbicaciones();
+  const cercano = encontrarTecnicoCercano(tienda);
+  if (!cercano) return;
+
+  cercanoId = cercano.uid;
+  document.getElementById('c-tec-nombre').textContent = cercano.nombre;
+  document.getElementById('c-tec-dist').textContent = `A ${cercano.distStr} de ${tienda.replace('Megasuper ','')}`;
+
+  // Mostrar otros técnicos
+  const otros = ['bayardo','alejandro','gerber','mauricio','carlos']
+    .filter(uid => uid !== cercano.uid)
+    .map(uid => {
+      const loc = tecUbicaciones[uid];
+      const u = USUARIOS[uid];
+      const dist = loc && TIENDAS_COORDS[tienda]
+        ? calcularDistancia(TIENDAS_COORDS[tienda].lat, TIENDAS_COORDS[tienda].lng, loc.lat, loc.lng)
+        : null;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--borde)">
+        <div class="tec-loc-av" style="background:${u.color||'var(--borde2)'}">${u.initials}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:var(--blanco);font-weight:600">${u.nombre}</div>
+          <div style="font-size:11px;color:var(--texto-dim)">${dist ? (dist<1?Math.round(dist*1000)+'m':dist.toFixed(1)+'km')+' de la tienda' : 'Sin ubicación activa'}</div>
+        </div>
+        <button class="tec-loc-btn secondary" onclick="asignarTecnico('${uid}');cerrar('modal-cercano')">Asignar</button>
+      </div>`;
+    }).join('');
+
+  document.getElementById('c-otros-tecs').innerHTML = otros;
+  abrir('modal-cercano');
+}
+
+function asignarCercano() {
+  if (cercanoId) {
+    document.getElementById('f-tec').value = cercanoId;
+    toast('✅ Técnico más cercano asignado: ' + USUARIOS[cercanoId].nombre);
+  }
+  cerrar('modal-cercano');
+}
+
+function asignarTecnico(uid) {
+  document.getElementById('f-tec').value = uid;
+  toast('✅ Asignado: ' + USUARIOS[uid].nombre);
+}
+
+function renderUbicaciones() {
+  cargarUbicaciones();
+  const tecnicos = ['mauricio','carlos','bayardo','alejandro','gerber'];
+  const lista = document.getElementById('mapa-tecnicos-lista');
+  if (!lista) return;
+
+  lista.innerHTML = tecnicos.map(uid => {
+    const u = USUARIOS[uid];
+    const loc = tecUbicaciones[uid];
+    const ahora = Date.now();
+    const activo = loc && (ahora - loc.ts < 30*60*1000);
+    const hace = loc ? Math.round((ahora - loc.ts)/60000) : null;
+
+    return `<div class="tec-loc-row">
+      <div class="tec-loc-av" style="background:${u.color||'var(--borde2)'}">${u.initials}</div>
+      <div class="tec-loc-info">
+        <div class="tec-loc-nombre">${u.nombre} <span style="font-size:10px;color:${u.rol==='admin'?'var(--en-espera)':'var(--en-curso)'}">${u.rol==='admin'?'Admin':'Técnico'}</span></div>
+        <div class="tec-loc-dist">${activo
+          ? '🟢 Activo · hace '+hace+'min · '+loc.lat.toFixed(4)+', '+loc.lng.toFixed(4)
+          : '⚫ Sin ubicación activa'}</div>
+      </div>
+      ${activo && loc ? `<a href="https://www.google.com/maps?q=${loc.lat},${loc.lng}" target="_blank" class="tec-loc-btn">Ver en Maps</a>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// SISTEMA DE NOTIFICACIONES (Web Push simulado)
+// ══════════════════════════════════════════
+function solicitarPermisoNotificaciones() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function enviarNotificacion(titulo, cuerpo) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(titulo, {
+      body: cuerpo,
+      icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔔</text></svg>'
+    });
+  }
+}
+
+function notificarTecnico(tecnicoId, ticket, tienda, descripcion) {
+  // Guardar notificación pendiente en localStorage para ese técnico
+  const key = 'sj-notif-' + tecnicoId;
+  const notifs = JSON.parse(localStorage.getItem(key) || '[]');
+  notifs.push({
+    ticket, tienda, descripcion,
+    ts: Date.now(),
+    leida: false
+  });
+  localStorage.setItem(key, JSON.stringify(notifs));
+
+  // Si el técnico está en sesión activa, notificar en el navegador
+  if (sesion && sesion.id === tecnicoId) {
+    enviarNotificacion('🚨 Nueva Emergencia - SOJIFAM', `Tiquete #${ticket} · ${tienda}\n${descripcion}`);
+  }
+}
+
+function verificarNotificacionesPropias() {
+  if (!sesion) return;
+  const key = 'sj-notif-' + sesion.id;
+  const notifs = JSON.parse(localStorage.getItem(key) || '[]');
+  const noLeidas = notifs.filter(n => !n.leida);
+
+  if (noLeidas.length > 0) {
+    noLeidas.forEach(n => {
+      enviarNotificacion('🚨 Nueva Emergencia - SOJIFAM', `Tiquete #${n.ticket} · ${n.tienda}`);
+    });
+    // Marcar como leídas
+    notifs.forEach(n => n.leida = true);
+    localStorage.setItem(key, JSON.stringify(notifs));
+    renderMisCasos();
+  }
+}
+
+// ══════════════════════════════════════════
+// USUARIOS Y CONTRASEÑAS
+// ══════════════════════════════════════════
+const USUARIOS = {
+  mauricio:  { nombre: 'Mauricio',    pass: 'mauricio1234',  rol: 'admin',   initials: 'MA', color: '#E31837' },
+  carlos:    { nombre: 'Carlos Sosa', pass: 'carlos1234',    rol: 'admin',   initials: 'CS', color: '#F5A623' },
+  bayardo:   { nombre: 'Bayardo',     pass: 'bayardo1234',   rol: 'tecnico', initials: 'BA', color: '#3b82f6' },
+  alejandro: { nombre: 'Alejandro',   pass: 'alejandro1234', rol: 'tecnico', initials: 'AL', color: '#8b5cf6' },
+  gerber:    { nombre: 'Gerber',      pass: 'gerber1234',    rol: 'tecnico', initials: 'GE', color: '#22c55e' }
+};
+
+let sesion = null;
+let datos = JSON.parse(localStorage.getItem('sj-mega-v2') || '[]');
+let filtroActual = 'todos';
+let editandoId = null;
+let cierreId = null;
+let esperaId = null;
+let imgTiquete = '';
+let imgCierre = '';
+
+// Dato de ejemplo
+if (datos.length === 0) {
+  datos = [{
+    id: 1,
+    ticket: '747526',
+    tienda: 'Megasuper Atenas',
+    fecha: '02/06/26 20:15',
+    descripcion: 'Las trampas de grasa y tuberías de la carnicería se encuentran taqueadas.',
+    solicitante: 'Andrey Castro Mora | Administrador',
+    tecnico: '',
+    estado: 'Pendiente',
+    img_tiquete: null,
+    img_cierre: null,
+    desc_cierre: '',
+    motivo_espera: '',
+    creado: new Date().toISOString()
+  }];
+  guardarLocal();
+}
+
+function guardarLocal() {
+  localStorage.setItem('sj-mega-v2', JSON.stringify(datos));
+}
+
+// ══════════════════════════════════════════
+// LOGIN / SESIÓN
+// ══════════════════════════════════════════
+function login() {
+  const uid = document.getElementById('sel-usuario').value;
+  const pass = document.getElementById('inp-pass').value;
+  const err = document.getElementById('login-err');
+
+  if (!uid) { err.textContent = 'Seleccioná un usuario'; return; }
+  const u = USUARIOS[uid];
+  if (!u || pass !== u.pass) { err.textContent = 'Contraseña incorrecta'; return; }
+
+  sesion = { id: uid, ...u };
+  err.textContent = '';
+  document.getElementById('inp-pass').value = '';
+
+  document.getElementById('pantalla-login').style.display = 'none';
+  document.getElementById('pantalla-app').style.display = 'flex';
+  document.getElementById('pantalla-app').style.flexDirection = 'column';
+
+  document.getElementById('h-avatar').textContent = u.initials;
+  document.getElementById('h-nombre').textContent = u.nombre;
+  document.getElementById('h-rol').textContent = u.rol === 'admin' ? 'Admin · Técnico' : 'Técnico';
+
+  construirNav();
+  ir(sesion.rol === 'admin' ? 'pag-dashboard' : 'pag-miscasos');
+
+  // Iniciar geolocalización y notificaciones
+  solicitarPermisoNotificaciones();
+  iniciarGeolocalizacion();
+  verificarNotificacionesPropias();
+  setInterval(verificarNotificacionesPropias, 30000); // revisar cada 30s
+}
+
+function salir() {
+  sesion = null;
+  document.getElementById('pantalla-login').style.display = 'flex';
+  document.getElementById('pantalla-app').style.display = 'none';
+}
+
+// ══════════════════════════════════════════
+// NAVEGACIÓN
+// ══════════════════════════════════════════
+function construirNav() {
+  const nav = document.getElementById('h-nav');
+  nav.innerHTML = '';
+  const tabs = [];
+  if (sesion.rol === 'admin') tabs.push({ id: 'pag-dashboard', label: 'Dashboard' });
+  tabs.push({ id: 'pag-miscasos', label: 'Mis Casos' });
+  if (sesion.rol === 'admin') tabs.push({ id: 'pag-stats', label: 'Estadísticas' });
+  if (sesion.rol === 'admin') tabs.push({ id: 'pag-ubicaciones', label: '📍 Ubicaciones' });
+
+  tabs.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'h-nav-btn';
+    btn.textContent = t.label;
+    btn.dataset.pag = t.id;
+    btn.onclick = () => ir(t.id);
+    nav.appendChild(btn);
+  });
+
+  document.getElementById('mis-casos-titulo').textContent = `Mis Casos — ${sesion.nombre}`;
+}
+
+function ir(pagId) {
+  document.querySelectorAll('.pagina').forEach(p => p.classList.remove('activa'));
+  document.querySelectorAll('.h-nav-btn').forEach(b => {
+    b.classList.toggle('activo', b.dataset.pag === pagId);
+  });
+  document.getElementById(pagId).classList.add('activa');
+
+  if (pagId === 'pag-dashboard') renderTabla();
+  if (pagId === 'pag-miscasos') renderMisCasos();
+  if (pagId === 'pag-stats') renderStats();
+  if (pagId === 'pag-ubicaciones') renderUbicaciones();
+}
+
+// ══════════════════════════════════════════
+// FILTROS Y RENDER TABLA ADMIN
+// ══════════════════════════════════════════
+function filtrar(f, btn) {
+  filtroActual = f;
+  document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderTabla();
+}
+
+function renderTabla() {
+  const q = (document.getElementById('buscar-inp')?.value || '').toLowerCase();
+  let rows = [...datos];
+
+  if (filtroActual !== 'todos') rows = rows.filter(e => e.estado === filtroActual);
+  if (q) rows = rows.filter(e =>
+    e.ticket.toLowerCase().includes(q) ||
+    e.tienda.toLowerCase().includes(q) ||
+    e.descripcion.toLowerCase().includes(q)
+  );
+
+  rows.sort((a,b) => b.id - a.id);
+
+  document.getElementById('s-total').textContent = datos.length;
+  document.getElementById('s-pend').textContent  = datos.filter(e=>e.estado==='Pendiente').length;
+  document.getElementById('s-curso').textContent = datos.filter(e=>e.estado==='En Curso').length;
+  document.getElementById('s-espera').textContent= datos.filter(e=>e.estado==='En Espera').length;
+  document.getElementById('s-comp').textContent  = datos.filter(e=>e.estado==='Completado').length;
+
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty-tabla');
+
+  if (!rows.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = rows.map(e => `
+    <tr class="fila" onclick="verDetalle(${e.id})">
+      <td><span class="tk">#${e.ticket}</span></td>
+      <td>
+        <div class="t-bold">${e.tienda.replace('Megasuper ','')}</div>
+        <div class="t-sub">Mega Super</div>
+      </td>
+      <td><div class="t-desc">${e.descripcion}</div></td>
+      <td><span style="font-family:'Epilogue Mono',monospace;font-size:11px;color:var(--texto-dim)">${e.fecha||'—'}</span></td>
+      <td>${e.tecnico ? tecBadge(e.tecnico) : '<span style="color:var(--texto-dim);font-size:12px">Sin asignar</span>'}</td>
+      <td>${badge(e.estado)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="acc-btns">
+          <button class="btn-sm" onclick="editarE(${e.id})">✏️</button>
+          <button class="btn-sm" onclick="eliminarE(${e.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ══════════════════════════════════════════
+// MIS CASOS (técnico)
+// ══════════════════════════════════════════
+function renderMisCasos() {
+  const misCasos = datos.filter(e => e.tecnico === sesion.id);
+  misCasos.sort((a,b) => b.id - a.id);
+
+  document.getElementById('ms-pend').textContent  = misCasos.filter(e=>e.estado==='Pendiente').length;
+  document.getElementById('ms-curso').textContent = misCasos.filter(e=>e.estado==='En Curso').length;
+  document.getElementById('ms-espera').textContent= misCasos.filter(e=>e.estado==='En Espera').length;
+  document.getElementById('ms-comp').textContent  = misCasos.filter(e=>e.estado==='Completado').length;
+
+  const tbody = document.getElementById('tbody-mis');
+  const empty = document.getElementById('empty-mis');
+
+  if (!misCasos.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  tbody.innerHTML = misCasos.map(e => `
+    <tr class="fila" onclick="verDetalle(${e.id})">
+      <td><span class="tk">#${e.ticket}</span></td>
+      <td>
+        <div class="t-bold">${e.tienda.replace('Megasuper ','')}</div>
+        <div class="t-sub">Mega Super</div>
+      </td>
+      <td><div class="t-desc">${e.descripcion}</div></td>
+      <td><span style="font-family:'Epilogue Mono',monospace;font-size:11px;color:var(--texto-dim)">${e.fecha||'—'}</span></td>
+      <td>${badge(e.estado)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="acc-btns">
+          ${e.estado !== 'Completado' ? `
+            ${e.estado === 'Pendiente' ? `<button class="btn-sm verde" onclick="iniciarCaso(${e.id})">▶ Iniciar</button>` : ''}
+            ${e.estado === 'En Curso'  ? `<button class="btn-sm morado" onclick="abrirEspera(${e.id})">⏸ Espera</button>` : ''}
+            ${e.estado === 'En Espera' ? `<button class="btn-sm verde" onclick="reanudar(${e.id})">▶ Reanudar</button>` : ''}
+            ${e.estado !== 'Pendiente' ? `<button class="btn-sm verde" onclick="abrirCierre(${e.id})">✓ Cerrar</button>` : ''}
+          ` : '<span style="color:var(--completado);font-size:12px">✓ Finalizado</span>'}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ══════════════════════════════════════════
+// ESTADÍSTICAS
+// ══════════════════════════════════════════
+function renderStats() {
+  // Por técnico
+  const tecnicos = ['mauricio','carlos','bayardo','alejandro','gerber'];
+  const maxT = Math.max(...tecnicos.map(t => datos.filter(e=>e.tecnico===t).length), 1);
+
+  document.getElementById('stats-tecnicos').innerHTML = tecnicos.map(t => {
+    const u = USUARIOS[t];
+    const total = datos.filter(e=>e.tecnico===t).length;
+    const comp  = datos.filter(e=>e.tecnico===t && e.estado==='Completado').length;
+    const pct   = Math.round((total/maxT)*100);
+    return `
+      <div class="tec-row">
+        <div class="tec-av-lg">${u.initials}</div>
+        <div class="tec-info">
+          <div class="tec-nombre">${u.nombre}</div>
+          <div class="tec-nums">${comp} completados · ${total} total</div>
+        </div>
+        <div class="tec-barra-wrap">
+          <div class="tec-barra-bg">
+            <div class="tec-barra-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+        <div class="tec-total">${total}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Por tienda
+  const tiendas = [...new Set(datos.map(e=>e.tienda))];
+  const conteos = tiendas.map(t => ({ nombre: t, cnt: datos.filter(e=>e.tienda===t).length }))
+    .sort((a,b) => b.cnt - a.cnt);
+  const maxM = Math.max(...conteos.map(c=>c.cnt), 1);
+
+  document.getElementById('stats-tiendas').innerHTML = conteos.length
+    ? conteos.map(c => `
+      <div class="mega-row">
+        <div class="mega-nombre">${c.nombre.replace('Megasuper ','')}</div>
+        <div class="mega-barra-bg">
+          <div class="mega-barra-fill" style="width:${Math.round((c.cnt/maxM)*100)}%"></div>
+        </div>
+        <div class="mega-cnt">${c.cnt}</div>
+      </div>
+    `).join('')
+    : '<p style="color:var(--texto-dim);font-size:13px">Sin datos aún</p>';
+}
+
+// ══════════════════════════════════════════
+// BADGE HELPERS
+// ══════════════════════════════════════════
+function badge(estado) {
+  const m = {
+    'Pendiente':  'b-pend',
+    'En Curso':   'b-curso',
+    'En Espera':  'b-espera',
+    'Completado': 'b-comp',
+    'Cancelado':  'b-cancel'
+  };
+  return `<span class="badge ${m[estado]||'b-cancel'}"><span class="dot"></span>${estado}</span>`;
+}
+
+function tecBadge(tecId) {
+  const u = USUARIOS[tecId];
+  if (!u) return '—';
+  return `<span class="tech-badge"><span class="tech-av">${u.initials}</span>${u.nombre}</span>`;
+}
+
+// ══════════════════════════════════════════
+// NUEVA / EDITAR EMERGENCIA
+// ══════════════════════════════════════════
+function abrirNuevo() {
+  editandoId = null;
+  imgTiquete = '';
+  limpiarForm();
+  document.getElementById('m-nuevo-titulo').textContent = 'Nueva Emergencia';
+  abrir('modal-nuevo');
+}
+
+function limpiarForm() {
+  ['f-tk','f-fh','f-desc','f-solic'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('f-tienda').selectedIndex=0;
+  document.getElementById('f-tec').value='';
+  document.getElementById('f-estado').value='Pendiente';
+  document.getElementById('prev-img').style.display='none';
+  document.getElementById('prev-img').src='';
+  document.getElementById('u-ico').style.display='block';
+  document.getElementById('u-txt').innerHTML='<strong>Subí la foto del tiquete</strong><br>IA extrae la información automáticamente';
+  document.getElementById('u-txt').style.display='block';
+  document.getElementById('spin').style.display='none';
+  document.getElementById('upload-z').classList.remove('loading');
+  imgTiquete = '';
+}
+
+function editarE(id) {
+  const e = datos.find(d=>d.id===id);
+  if (!e) return;
+  editandoId = id;
+  document.getElementById('m-nuevo-titulo').textContent = 'Editar Emergencia';
+
+  document.getElementById('f-tk').value = e.ticket;
+  document.getElementById('f-fh').value = e.fecha;
+  document.getElementById('f-desc').value = e.descripcion;
+  document.getElementById('f-solic').value = e.solicitante||'';
+  document.getElementById('f-tec').value = e.tecnico||'';
+  document.getElementById('f-estado').value = e.estado;
+
+  setSelectOpcion('f-tienda', e.tienda);
+
+  if (e.img_tiquete) {
+    document.getElementById('prev-img').src = e.img_tiquete;
+    document.getElementById('prev-img').style.display='block';
+    imgTiquete = e.img_tiquete;
+  }
+
+  abrir('modal-nuevo');
+}
+
+function setSelectOpcion(selId, val) {
+  const sel = document.getElementById(selId);
+  let opt = Array.from(sel.options).find(o=>o.value===val);
+  if (!opt) {
+    opt = new Option(val, val);
+    sel.add(opt);
+  }
+  sel.value = val;
+}
+
+function guardar() {
+  const ticket = document.getElementById('f-tk').value.trim();
+  const tienda = document.getElementById('f-tienda').value;
+  const desc   = document.getElementById('f-desc').value.trim();
+
+  if (!ticket||!tienda||!desc) { toast('⚠️ Completá tiquete, tienda y descripción'); return; }
+
+  const obj = {
+    ticket,
+    tienda,
+    fecha:      document.getElementById('f-fh').value.trim(),
+    descripcion: desc,
+    solicitante: document.getElementById('f-solic').value.trim(),
+    tecnico:    document.getElementById('f-tec').value,
+    estado:     document.getElementById('f-estado').value,
+    img_tiquete: imgTiquete || null
+  };
+
+  if (editandoId !== null) {
+    const idx = datos.findIndex(d=>d.id===editandoId);
+    const anterior = datos[idx];
+    if (idx!==-1) datos[idx] = { ...datos[idx], ...obj };
+    // Notificar si cambió el técnico asignado
+    if (obj.tecnico && obj.tecnico !== anterior.tecnico) {
+      notificarTecnico(obj.tecnico, obj.ticket, obj.tienda, obj.descripcion);
+    }
+    toast('✅ Emergencia actualizada');
+  } else {
+    const maxId = datos.length ? Math.max(...datos.map(d=>d.id)) : 0;
+    datos.push({ id: maxId+1, ...obj, img_cierre:null, desc_cierre:'', motivo_espera:'', creado: new Date().toISOString() });
+    // Notificar al técnico asignado
+    if (obj.tecnico) {
+      notificarTecnico(obj.tecnico, obj.ticket, obj.tienda, obj.descripcion);
+    }
+    toast('✅ Emergencia registrada');
+  }
+
+  guardarLocal();
+  cerrar('modal-nuevo');
+  renderTabla();
+}
+
+// ══════════════════════════════════════════
+// PROCESAR IMAGEN CON IA
+// ══════════════════════════════════════════
+async function procesarImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const b64full = ev.target.result;
+    imgTiquete = b64full;
+
+    document.getElementById('prev-img').src = b64full;
+    document.getElementById('prev-img').style.display='block';
+    document.getElementById('u-ico').style.display='none';
+    document.getElementById('u-txt').style.display='none';
+    document.getElementById('spin').style.display='block';
+    document.getElementById('upload-z').classList.add('loading');
+
+    try {
+      const b64 = b64full.split(',')[1];
+      const mt  = file.type || 'image/jpeg';
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:1000,
+          messages:[{
+            role:'user',
+            content:[
+              { type:'image', source:{ type:'base64', media_type:mt, data:b64 } },
+              { type:'text', text:`Analizá este tiquete de Mega Super. Respondé SOLO con JSON válido sin texto adicional ni markdown:\n{"ticket":"número sin #","tienda":"nombre completo","fecha":"fecha y hora exacta","descripcion":"descripción del problema","solicitante":"nombre y cargo"}` }
+            ]
+          }]
+        })
+      });
+
+      const data = await res.json();
+      const txt = data.content.map(i=>i.text||'').join('').trim();
+      let info;
+      try { info = JSON.parse(txt); }
+      catch { const m = txt.match(/\{[\s\S]*\}/); info = m ? JSON.parse(m[0]) : {}; }
+
+      if (info.ticket) document.getElementById('f-tk').value = info.ticket;
+      if (info.fecha)  document.getElementById('f-fh').value = info.fecha;
+      if (info.descripcion) document.getElementById('f-desc').value = info.descripcion;
+      if (info.solicitante) document.getElementById('f-solic').value = info.solicitante;
+
+      // Buscar tienda de forma aproximada
+      if (info.tienda) {
+        const sel = document.getElementById('f-tienda');
+        const tiendaIA = info.tienda.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        let mejorOpcion = null;
+        let mejorScore = 0;
+        Array.from(sel.options).forEach(opt => {
+          if (!opt.value) return;
+          const optNorm = opt.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+          // Contar palabras en común
+          const palabrasIA = tiendaIA.split(/\s+/);
+          const palabrasOpt = optNorm.split(/\s+/);
+          const comunes = palabrasIA.filter(p => palabrasOpt.some(o => o.includes(p) || p.includes(o))).length;
+          if (comunes > mejorScore) { mejorScore = comunes; mejorOpcion = opt.value; }
+        });
+        if (mejorOpcion) {
+          sel.value = mejorOpcion;
+          // Disparar sugerencia de técnico cercano automáticamente
+          if (sesion?.rol === 'admin') {
+            setTimeout(() => mostrarSugerenciaCercano(mejorOpcion), 500);
+          }
+        } else {
+          setSelectOpcion('f-tienda', info.tienda);
+        }
+      }
+
+      toast('✅ Datos extraídos automáticamente');
+    } catch(err) {
+      console.error(err);
+      toast('⚠️ Completá los datos manualmente');
+    }
+
+    document.getElementById('spin').style.display='none';
+    document.getElementById('u-ico').style.display='block';
+    document.getElementById('u-txt').innerHTML='<strong>Foto cargada</strong> · Tocá para cambiar';
+    document.getElementById('u-txt').style.display='block';
+    document.getElementById('upload-z').classList.remove('loading');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ══════════════════════════════════════════
+// DETALLE
+// ══════════════════════════════════════════
+function verDetalle(id) {
+  const e = datos.find(d=>d.id===id);
+  if (!e) return;
+
+  document.getElementById('det-titulo').textContent = `Tiquete #${e.ticket}`;
+
+  const esMio = e.tecnico === sesion.id;
+  const esAdmin = sesion.rol === 'admin';
+
+  document.getElementById('det-body').innerHTML = `
+    ${e.img_tiquete ? `<img src="${e.img_tiquete}" class="det-img">` : ''}
+    <div class="det-grid">
+      <div class="det-campo">
+        <div class="det-etq">Tienda</div>
+        <div class="det-val">${e.tienda}</div>
+      </div>
+      <div class="det-campo">
+        <div class="det-etq">Fecha</div>
+        <div class="det-val">${e.fecha||'—'}</div>
+      </div>
+    </div>
+    <div class="det-campo">
+      <div class="det-etq">Descripción</div>
+      <div class="det-val">${e.descripcion}</div>
+    </div>
+    <div class="det-campo">
+      <div class="det-etq">Solicitante</div>
+      <div class="det-val">${e.solicitante||'—'}</div>
+    </div>
+    <div class="det-grid">
+      <div class="det-campo">
+        <div class="det-etq">Técnico</div>
+        <div class="det-val">${e.tecnico ? USUARIOS[e.tecnico]?.nombre||'—' : 'Sin asignar'}</div>
+      </div>
+      <div class="det-campo">
+        <div class="det-etq">Estado</div>
+        <div class="det-val">
+          ${esAdmin
+            ? `<select class="sel-estado" onchange="cambiarEstado(${e.id},this.value)">
+                ${['Pendiente','En Curso','En Espera','Completado','Cancelado'].map(s=>`<option ${e.estado===s?'selected':''}>${s}</option>`).join('')}
+               </select>`
+            : badge(e.estado)
+          }
+        </div>
+      </div>
+    </div>
+    ${e.desc_cierre ? `
+      <div class="det-campo" style="background:rgba(34,197,94,.05);border-radius:8px;padding:12px;margin-top:8px;border:1px solid rgba(34,197,94,.15)">
+        <div class="det-etq" style="color:var(--completado)">Trabajo realizado</div>
+        <div class="det-val">${e.desc_cierre}</div>
+        ${e.img_cierre ? `<img src="${e.img_cierre}" style="width:100%;border-radius:6px;margin-top:8px">` : ''}
+      </div>
+    ` : ''}
+    ${e.motivo_espera ? `
+      <div class="det-campo" style="background:rgba(168,85,247,.05);border-radius:8px;padding:12px;margin-top:8px;border:1px solid rgba(168,85,247,.15)">
+        <div class="det-etq" style="color:var(--en-espera)">Motivo de espera</div>
+        <div class="det-val">${e.motivo_espera}</div>
+      </div>
+    ` : ''}
+  `;
+
+  // Footer
+  const footer = document.getElementById('det-footer');
+  let btns = `<button class="btn-sec" onclick="cerrar('modal-det')">Cerrar</button>`;
+  if (esAdmin) btns += `<button class="btn-primary" onclick="cerrar('modal-det');editarE(${e.id})">✏️ Editar</button>`;
+  if (esMio && e.estado !== 'Completado') {
+    if (e.estado === 'Pendiente') btns += `<button class="btn-primary" style="background:var(--en-curso)" onclick="cerrar('modal-det');iniciarCaso(${e.id})">▶ Iniciar</button>`;
+    if (e.estado === 'En Curso')  btns += `<button class="btn-primary" style="background:var(--en-espera)" onclick="cerrar('modal-det');abrirEspera(${e.id})">⏸ Espera</button>`;
+    if (e.estado === 'En Espera') btns += `<button class="btn-primary" style="background:var(--en-curso)" onclick="cerrar('modal-det');reanudar(${e.id})">▶ Reanudar</button>`;
+    if (e.estado !== 'Pendiente') btns += `<button class="btn-primary" style="background:var(--completado)" onclick="cerrar('modal-det');abrirCierre(${e.id})">✓ Cerrar caso</button>`;
+  }
+  footer.innerHTML = btns;
+
+  abrir('modal-det');
+}
+
+function cambiarEstado(id, nuevoEstado) {
+  const idx = datos.findIndex(d=>d.id===id);
+  if (idx!==-1) { datos[idx].estado=nuevoEstado; guardarLocal(); renderTabla(); toast(`✅ Estado: ${nuevoEstado}`); }
+}
+
+// ══════════════════════════════════════════
+// ACCIONES TÉCNICO
+// ══════════════════════════════════════════
+function iniciarCaso(id) {
+  const idx = datos.findIndex(d=>d.id===id);
+  if (idx!==-1) { datos[idx].estado='En Curso'; guardarLocal(); renderMisCasos(); toast('▶ Caso iniciado'); }
+}
+
+function reanudar(id) {
+  const idx = datos.findIndex(d=>d.id===id);
+  if (idx!==-1) { datos[idx].estado='En Curso'; datos[idx].motivo_espera=''; guardarLocal(); renderMisCasos(); toast('▶ Caso reanudado'); }
+}
+
+function abrirEspera(id) {
+  esperaId = id;
+  document.getElementById('e-motivo').value='';
+  abrir('modal-espera');
+}
+
+function confirmarEspera() {
+  const motivo = document.getElementById('e-motivo').value.trim();
+  if (!motivo) { toast('⚠️ Escribí el motivo de la espera'); return; }
+  const idx = datos.findIndex(d=>d.id===esperaId);
+  if (idx!==-1) {
+    datos[idx].estado='En Espera';
+    datos[idx].motivo_espera=motivo;
+    guardarLocal();
+    cerrar('modal-espera');
+    renderMisCasos();
+    toast('⏸ Caso en espera');
+  }
+}
+
+function abrirCierre(id) {
+  cierreId = id;
+  imgCierre = '';
+  document.getElementById('c-desc').value='';
+  document.getElementById('c-prev').style.display='none';
+  document.getElementById('c-prev').src='';
+  abrir('modal-cierre');
+}
+
+function prevCierre(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    imgCierre = ev.target.result;
+    document.getElementById('c-prev').src = imgCierre;
+    document.getElementById('c-prev').style.display='block';
+  };
+  r.readAsDataURL(file);
+}
+
+function confirmarCierre() {
+  const desc = document.getElementById('c-desc').value.trim();
+  if (!desc) { toast('⚠️ Describí el trabajo realizado'); return; }
+  const idx = datos.findIndex(d=>d.id===cierreId);
+  if (idx!==-1) {
+    datos[idx].estado='Completado';
+    datos[idx].desc_cierre=desc;
+    datos[idx].img_cierre=imgCierre||null;
+    datos[idx].motivo_espera='';
+    guardarLocal();
+    cerrar('modal-cierre');
+    renderMisCasos();
+    toast('✅ Caso cerrado correctamente');
+  }
+}
+
+// ══════════════════════════════════════════
+// ELIMINAR
+// ══════════════════════════════════════════
+function eliminarE(id) {
+  if (!confirm('¿Eliminar esta emergencia?')) return;
+  datos = datos.filter(d=>d.id!==id);
+  guardarLocal();
+  renderTabla();
+  toast('🗑️ Eliminado');
+}
+
+// ══════════════════════════════════════════
+// MODAL UTILS
+// ══════════════════════════════════════════
+function abrir(id) { document.getElementById(id).classList.add('open'); }
+function cerrar(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
