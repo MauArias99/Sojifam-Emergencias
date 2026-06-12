@@ -2,7 +2,7 @@
   "name": "SOJIFAM Emergencias - Mega Super",
   "short_name": "SOJIFAM",
   "description": "Sistema de gestión de emergencias SOJIFAM para Mega Super",
-  "start_url": "./sojifam-megasuper.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
