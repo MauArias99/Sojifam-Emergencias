@@ -1421,7 +1421,10 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
       <option value="gerber">Gerber</option>
     </select>
     <label class="login-label">Contraseña</label>
-    <input class="login-input" type="password" id="inp-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <div style="position:relative">
+      <input class="login-input" type="password" id="inp-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" style="padding-right:40px">
+      <button type="button" onclick="toggleVerPass()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--texto-dim);cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px;font-family:'Montserrat',sans-serif" id="btn-ver-pass">VER</button>
+    </div>
     <button class="login-btn" onclick="login()">INGRESAR</button>
     <div class="login-error" id="login-err"></div>
   </div>
@@ -1938,7 +1941,7 @@ function iniciarGeolocalizacion() {
         ts: Date.now()
       };
       // Guardar en Firestore (compartido entre dispositivos)
-      db.collection('ubicaciones').doc(uid).set(tecUbicaciones[uid]).catch(e=>{});
+      if (db) db.collection('ubicaciones').doc(uid).set(tecUbicaciones[uid]).catch(e=>{});
     },
     err => console.log('Geo error:', err),
     { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
@@ -1946,7 +1949,7 @@ function iniciarGeolocalizacion() {
 }
 
 // Escuchar ubicaciones en tiempo real desde Firestore
-db.collection('ubicaciones').onSnapshot(snapshot => {
+if (db) db.collection('ubicaciones').onSnapshot(snapshot => {
   const ahora = Date.now();
   snapshot.docs.forEach(doc => {
     const data = doc.data();
@@ -2097,7 +2100,7 @@ async function solicitarPermisoNotificaciones() {
     if (token && sesion) {
       fcmToken = token;
       // Guardar el token de este usuario en Firestore
-      await db.collection('fcm_tokens').doc(sesion.id).set({
+      if (db) await db.collection('fcm_tokens').doc(sesion.id).set({
         token: token,
         nombre: sesion.nombre,
         actualizado: new Date().toISOString()
@@ -2129,6 +2132,7 @@ function enviarNotificacion(titulo, cuerpo) {
 // una Cloud Function (o el propio cliente) la envíe vía FCM
 async function notificarTecnico(tecnicoId, ticket, tienda, descripcion) {
   try {
+    if (!db) return;
     await db.collection('notificaciones_pendientes').add({
       destinatario: tecnicoId,
       titulo: '🚨 Nueva Emergencia - SOJIFAM',
@@ -2343,32 +2347,38 @@ const firebaseConfig = {
   appId: "1:1058585278400:web:46f28b76094fc7ad713a25"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db = null;
 const VAPID_KEY = "BKkOHggZAwAoa42OQpqzqhr5L3BUqpY-woWIoNh6ctBkCBO4GY_3evWaPg64dTNvdMr8S8E9SR8rvrrb3dkeAYw";
 
 let datos = [];
 let firestoreReady = false;
 
-// Escuchar cambios en tiempo real desde Firestore
-db.collection('emergencias').orderBy('id').onSnapshot(snapshot => {
-  datos = snapshot.docs.map(doc => ({ ...doc.data(), _docId: doc.id }));
-  firestoreReady = true;
-  // Re-renderizar la página actual si la app ya inició
-  if (sesion) {
-    const pagActiva = document.querySelector('.pagina.activa')?.id;
-    if (pagActiva === 'pag-dashboard') renderTabla();
-    if (pagActiva === 'pag-miscasos') renderMisCasos();
-    if (pagActiva === 'pag-stats') renderStats();
-  }
-}, err => {
-  console.error('Error Firestore:', err);
-  toast('⚠️ Error de conexión con la base de datos');
-});
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+
+  // Escuchar cambios en tiempo real desde Firestore
+  db.collection('emergencias').orderBy('id').onSnapshot(snapshot => {
+    datos = snapshot.docs.map(doc => ({ ...doc.data(), _docId: doc.id }));
+    firestoreReady = true;
+    // Re-renderizar la página actual si la app ya inició
+    if (sesion) {
+      const pagActiva = document.querySelector('.pagina.activa')?.id;
+      if (pagActiva === 'pag-dashboard') renderTabla();
+      if (pagActiva === 'pag-miscasos') renderMisCasos();
+      if (pagActiva === 'pag-stats') renderStats();
+    }
+  }, err => {
+    console.error('Error Firestore:', err);
+    if (typeof toast === 'function') toast('⚠️ Error de conexión con la base de datos');
+  });
+} catch(e) {
+  console.error('Error inicializando Firebase:', e);
+}
 
 // Guardar/actualizar una emergencia en Firestore
 async function guardarLocal() {
-  // Esta función ahora sincroniza con Firestore en vez de localStorage
+  if (!db) return;
   for (const item of datos) {
     const docId = item._docId || 'em_' + item.id;
     const data = { ...item };
@@ -2384,6 +2394,7 @@ async function guardarLocal() {
 
 // Guardar un solo documento (más eficiente)
 async function guardarUnaEmergencia(item) {
+  if (!db) { toast('⚠️ Sin conexión a la base de datos'); return; }
   const docId = item._docId || 'em_' + item.id;
   const data = { ...item };
   delete data._docId;
@@ -2397,6 +2408,7 @@ async function guardarUnaEmergencia(item) {
 
 // Eliminar una emergencia
 async function eliminarEmergenciaFirestore(item) {
+  if (!db) return;
   const docId = item._docId || 'em_' + item.id;
   try {
     await db.collection('emergencias').doc(docId).delete();
@@ -2409,6 +2421,18 @@ async function eliminarEmergenciaFirestore(item) {
 // ══════════════════════════════════════════
 // LOGIN / SESIÓN
 // ══════════════════════════════════════════
+function toggleVerPass() {
+  const inp = document.getElementById('inp-pass');
+  const btn = document.getElementById('btn-ver-pass');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = 'OCULTAR';
+  } else {
+    inp.type = 'password';
+    btn.textContent = 'VER';
+  }
+}
+
 function login() {
   const uid = document.getElementById('sel-usuario').value;
   const pass = document.getElementById('inp-pass').value;
