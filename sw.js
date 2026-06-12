@@ -51,7 +51,7 @@ self.addEventListener('notificationclick', event => {
 });
 
 // Cache básico para que la app cargue offline (PWA)
-const CACHE_NAME = 'sojifam-v1';
+const CACHE_NAME = 'sojifam-v2';
 const URLS_TO_CACHE = ['./', './sojifam-megasuper.html'];
 
 self.addEventListener('install', event => {
