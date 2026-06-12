@@ -1390,6 +1390,57 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
   padding: 0 4px;
   flex-shrink: 0;
 }
+
+/* ─── FOTOS MÚLTIPLES CIERRE ─── */
+.multi-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+.multi-upload-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.multi-upload-slot {
+  aspect-ratio: 1;
+  border: 1px dashed var(--borde2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background: var(--panel2);
+  transition: border-color 0.2s;
+}
+.multi-upload-slot:hover { border-color: var(--gold); }
+.multi-upload-slot img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+.multi-upload-slot-empty {
+  font-size: 22px;
+  color: var(--texto-dim);
+}
+.multi-upload-remove {
+  position: absolute;
+  top: 4px; right: 4px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+.multi-upload-hint {
+  font-size: 10px;
+  color: var(--texto-dim);
+  margin-top: 4px;
+}
 </style>
 
 <!-- Firebase SDK -->
@@ -1838,13 +1889,24 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
         <textarea id="c-desc" placeholder="¿Qué se hizo? ¿Cómo se resolvió?..." style="min-height:90px"></textarea>
       </div>
       <div class="fg">
-        <label>Foto de evidencia (opcional)</label>
-        <div class="upload-z" id="c-upload-z" onclick="document.getElementById('c-fi').click()" style="padding:20px">
-          <div class="upload-ico" style="font-size:24px;margin-bottom:4px">📸</div>
-          <div class="upload-txt">Tocá para adjuntar foto</div>
+        <label>Fotos del trabajo (máx. 3)</label>
+        <div class="multi-upload-grid" id="c-fotos-trabajo">
+          <div class="multi-upload-slot" onclick="document.getElementById('c-fi-t0').click()"><div class="multi-upload-slot-empty">+</div></div>
+          <div class="multi-upload-slot" onclick="document.getElementById('c-fi-t1').click()"><div class="multi-upload-slot-empty">+</div></div>
+          <div class="multi-upload-slot" onclick="document.getElementById('c-fi-t2').click()"><div class="multi-upload-slot-empty">+</div></div>
         </div>
-        <input type="file" id="c-fi" accept="image/*" style="display:none" onchange="prevCierre(this)">
-        <img id="c-prev" class="prev-img">
+        <input type="file" id="c-fi-t0" accept="image/*" style="display:none" onchange="prevCierre(this,'trabajo',0)">
+        <input type="file" id="c-fi-t1" accept="image/*" style="display:none" onchange="prevCierre(this,'trabajo',1)">
+        <input type="file" id="c-fi-t2" accept="image/*" style="display:none" onchange="prevCierre(this,'trabajo',2)">
+      </div>
+      <div class="fg">
+        <label>Fotos de factura (máx. 2)</label>
+        <div class="multi-upload-grid cols-2" id="c-fotos-factura">
+          <div class="multi-upload-slot" onclick="document.getElementById('c-fi-f0').click()"><div class="multi-upload-slot-empty">+</div></div>
+          <div class="multi-upload-slot" onclick="document.getElementById('c-fi-f1').click()"><div class="multi-upload-slot-empty">+</div></div>
+        </div>
+        <input type="file" id="c-fi-f0" accept="image/*" style="display:none" onchange="prevCierre(this,'factura',0)">
+        <input type="file" id="c-fi-f1" accept="image/*" style="display:none" onchange="prevCierre(this,'factura',1)">
       </div>
     </div>
     <div class="m-footer">
@@ -1901,6 +1963,105 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
 <div class="toast" id="toast"></div>
 
 <script>
+
+// ══════════════════════════════════════════
+// VERSIÓN DE LA APP — cambiar este número
+// cada vez que se suba una actualización
+// para que se actualice sola en todos los dispositivos
+// ══════════════════════════════════════════
+const APP_VERSION = '1.0.1';
+
+// ══════════════════════════════════════════
+// USUARIOS Y CONTRASEÑAS
+// ══════════════════════════════════════════
+const USUARIOS = {
+  mauricio:  { nombre: 'Mauricio',    pass: 'mauricio1234',  rol: 'admin',   initials: 'MA', color: '#E31837' },
+  carlos:    { nombre: 'Carlos Sosa', pass: 'carlos1234',    rol: 'admin',   initials: 'CS', color: '#F5A623' },
+  bayardo:   { nombre: 'Bayardo',     pass: 'bayardo1234',   rol: 'tecnico', initials: 'BA', color: '#3b82f6' },
+  alejandro: { nombre: 'Alejandro',   pass: 'alejandro1234', rol: 'tecnico', initials: 'AL', color: '#8b5cf6' },
+  gerber:    { nombre: 'Gerber',      pass: 'gerber1234',    rol: 'tecnico', initials: 'GE', color: '#22c55e' }
+};
+
+let sesion = null;
+let filtroActual = 'todos';
+let editandoId = null;
+let cierreId = null;
+let esperaId = null;
+let imgTiquete = '';
+let fotosTrabajo = [null,null,null];
+let fotosFactura = [null,null];
+
+// ══════════════════════════════════════════
+// FIREBASE — CONFIGURACIÓN Y CONEXIÓN
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAP2NizrWa7kwhW1ys3poMEQoEmNDd7dmw",
+  authDomain: "sojifam-emergencias.firebaseapp.com",
+  projectId: "sojifam-emergencias",
+  storageBucket: "sojifam-emergencias.firebasestorage.app",
+  messagingSenderId: "1058585278400",
+  appId: "1:1058585278400:web:46f28b76094fc7ad713a25"
+};
+
+let db = null;
+const VAPID_KEY = "BKkOHggZAwAoa42OQpqzqhr5L3BUqpY-woWIoNh6ctBkCBO4GY_3evWaPg64dTNvdMr8S8E9SR8rvrrb3dkeAYw";
+
+let datos = [];
+let firestoreReady = false;
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+
+  // Escuchar cambios en tiempo real desde Firestore
+  db.collection('emergencias').orderBy('id').onSnapshot(snapshot => {
+    datos = snapshot.docs.map(doc => ({ ...doc.data(), _docId: doc.id }));
+    firestoreReady = true;
+    // Re-renderizar la página actual si la app ya inició
+    if (sesion) {
+      const pagActiva = document.querySelector('.pagina.activa')?.id;
+      if (pagActiva === 'pag-dashboard') renderTabla();
+      if (pagActiva === 'pag-miscasos') renderMisCasos();
+      if (pagActiva === 'pag-stats') renderStats();
+    }
+  }, err => {
+    console.error('Error Firestore:', err);
+    if (typeof toast === 'function') toast('⚠️ Error de conexión con la base de datos');
+  });
+} catch(e) {
+  console.error('Error inicializando Firebase:', e);
+}
+
+// ══════════════════════════════════════════
+// AUTO-ACTUALIZACIÓN — revisa cada 60s si hay
+// una versión nueva publicada y recarga sola
+// ══════════════════════════════════════════
+function iniciarChequeoActualizacion() {
+  setInterval(async () => {
+    try {
+      const res = await fetch('./index.html?_=' + Date.now(), { cache: 'no-store' });
+      const texto = await res.text();
+      const match = texto.match(/const APP_VERSION = '([^']+)'/);
+      if (match && match[1] !== APP_VERSION) {
+        mostrarAvisoActualizacion();
+      }
+    } catch(e) {}
+  }, 60000); // cada 60 segundos
+}
+
+function mostrarAvisoActualizacion() {
+  if (document.getElementById('update-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--gold);color:var(--negro);text-align:center;padding:10px;font-family:\'Bebas Neue\',sans-serif;font-size:14px;letter-spacing:1px;z-index:9999;cursor:pointer';
+  banner.textContent = '⟳ NUEVA VERSIÓN DISPONIBLE — TOCÁ AQUÍ PARA ACTUALIZAR';
+  banner.onclick = () => location.reload(true);
+  document.body.appendChild(banner);
+
+  // Auto-recargar después de 5 segundos aunque no haga clic
+  setTimeout(() => location.reload(true), 5000);
+}
+
 
 // ══════════════════════════════════════════
 // UBICACIONES DE TIENDAS MEGA SUPER (coords aprox)
@@ -2316,65 +2477,6 @@ function confirmarReset(uid, nombre) {
   toast(`✅ Contraseña de ${nombre} restablecida`);
 }
 
-// ══════════════════════════════════════════
-// USUARIOS Y CONTRASEÑAS
-// ══════════════════════════════════════════
-const USUARIOS = {
-  mauricio:  { nombre: 'Mauricio',    pass: 'mauricio1234',  rol: 'admin',   initials: 'MA', color: '#E31837' },
-  carlos:    { nombre: 'Carlos Sosa', pass: 'carlos1234',    rol: 'admin',   initials: 'CS', color: '#F5A623' },
-  bayardo:   { nombre: 'Bayardo',     pass: 'bayardo1234',   rol: 'tecnico', initials: 'BA', color: '#3b82f6' },
-  alejandro: { nombre: 'Alejandro',   pass: 'alejandro1234', rol: 'tecnico', initials: 'AL', color: '#8b5cf6' },
-  gerber:    { nombre: 'Gerber',      pass: 'gerber1234',    rol: 'tecnico', initials: 'GE', color: '#22c55e' }
-};
-
-let sesion = null;
-let filtroActual = 'todos';
-let editandoId = null;
-let cierreId = null;
-let esperaId = null;
-let imgTiquete = '';
-let imgCierre = '';
-
-// ══════════════════════════════════════════
-// FIREBASE — CONFIGURACIÓN Y CONEXIÓN
-// ══════════════════════════════════════════
-const firebaseConfig = {
-  apiKey: "AIzaSyAP2NizrWa7kwhW1ys3poMEQoEmNDd7dmw",
-  authDomain: "sojifam-emergencias.firebaseapp.com",
-  projectId: "sojifam-emergencias",
-  storageBucket: "sojifam-emergencias.firebasestorage.app",
-  messagingSenderId: "1058585278400",
-  appId: "1:1058585278400:web:46f28b76094fc7ad713a25"
-};
-
-let db = null;
-const VAPID_KEY = "BKkOHggZAwAoa42OQpqzqhr5L3BUqpY-woWIoNh6ctBkCBO4GY_3evWaPg64dTNvdMr8S8E9SR8rvrrb3dkeAYw";
-
-let datos = [];
-let firestoreReady = false;
-
-try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-
-  // Escuchar cambios en tiempo real desde Firestore
-  db.collection('emergencias').orderBy('id').onSnapshot(snapshot => {
-    datos = snapshot.docs.map(doc => ({ ...doc.data(), _docId: doc.id }));
-    firestoreReady = true;
-    // Re-renderizar la página actual si la app ya inició
-    if (sesion) {
-      const pagActiva = document.querySelector('.pagina.activa')?.id;
-      if (pagActiva === 'pag-dashboard') renderTabla();
-      if (pagActiva === 'pag-miscasos') renderMisCasos();
-      if (pagActiva === 'pag-stats') renderStats();
-    }
-  }, err => {
-    console.error('Error Firestore:', err);
-    if (typeof toast === 'function') toast('⚠️ Error de conexión con la base de datos');
-  });
-} catch(e) {
-  console.error('Error inicializando Firebase:', e);
-}
 
 // Guardar/actualizar una emergencia en Firestore
 async function guardarLocal() {
@@ -2461,6 +2563,7 @@ function login() {
   // Iniciar geolocalización y notificaciones push
   solicitarPermisoNotificaciones();
   iniciarGeolocalizacion();
+  iniciarChequeoActualizacion();
 
   // Mostrar banner de instalación si está disponible
   if (deferredPrompt) document.getElementById('install-banner').style.display = 'flex';
@@ -2479,7 +2582,7 @@ function construirNav() {
   const nav = document.getElementById('h-nav');
   nav.innerHTML = '';
   const tabs = [];
-  if (sesion.rol === 'admin') tabs.push({ id: 'pag-dashboard', label: 'Dashboard' });
+  if (sesion.rol === 'admin') tabs.push({ id: 'pag-dashboard', label: 'Inicio' });
   tabs.push({ id: 'pag-miscasos', label: 'Mis Casos' });
   if (sesion.rol === 'admin') tabs.push({ id: 'pag-stats', label: 'Estadísticas' });
   if (sesion.rol === 'admin') tabs.push({ id: 'pag-ubicaciones', label: '📍 Ubicaciones' });
@@ -3108,7 +3211,18 @@ function verDetalle(id) {
       <div class="det-campo" style="background:rgba(34,197,94,.05);border-radius:8px;padding:12px;margin-top:8px;border:1px solid rgba(34,197,94,.15)">
         <div class="det-etq" style="color:var(--completado)">Trabajo realizado</div>
         <div class="det-val">${e.desc_cierre}</div>
-        ${e.img_cierre ? `<img src="${e.img_cierre}" style="width:100%;border-radius:6px;margin-top:8px">` : ''}
+        ${(e.fotos_trabajo && e.fotos_trabajo.length) ? `
+          <div style="font-size:10px;color:var(--texto-dim);margin-top:8px;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Fotos del trabajo</div>
+          <div style="display:grid;grid-template-columns:repeat(${Math.min(e.fotos_trabajo.length,3)},1fr);gap:6px">
+            ${e.fotos_trabajo.map(f=>`<img src="${f}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer" onclick="window.open(this.src,'_blank')">`).join('')}
+          </div>
+        ` : (e.img_cierre ? `<img src="${e.img_cierre}" style="width:100%;border-radius:6px;margin-top:8px">` : '')}
+        ${(e.fotos_factura && e.fotos_factura.length) ? `
+          <div style="font-size:10px;color:var(--texto-dim);margin-top:8px;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Facturas</div>
+          <div style="display:grid;grid-template-columns:repeat(${Math.min(e.fotos_factura.length,2)},1fr);gap:6px">
+            ${e.fotos_factura.map(f=>`<img src="${f}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer" onclick="window.open(this.src,'_blank')">`).join('')}
+          </div>
+        ` : ''}
       </div>
     ` : ''}
     ${e.motivo_espera ? `
@@ -3174,23 +3288,52 @@ function confirmarEspera() {
 
 function abrirCierre(id) {
   cierreId = id;
-  imgCierre = '';
+  fotosTrabajo = [null,null,null];
+  fotosFactura = [null,null];
   document.getElementById('c-desc').value='';
-  document.getElementById('c-prev').style.display='none';
-  document.getElementById('c-prev').src='';
+  renderFotosCierre();
   abrir('modal-cierre');
 }
 
-function prevCierre(input) {
+function renderFotosCierre() {
+  // Fotos de trabajo
+  const gridT = document.getElementById('c-fotos-trabajo');
+  gridT.innerHTML = fotosTrabajo.map((foto,i) => `
+    <div class="multi-upload-slot" onclick="${foto?'':`document.getElementById('c-fi-t${i}').click()`}">
+      ${foto
+        ? `<img src="${foto}"><button class="multi-upload-remove" onclick="event.stopPropagation();quitarFotoCierre('trabajo',${i})">×</button>`
+        : `<div class="multi-upload-slot-empty">+</div>`}
+    </div>
+  `).join('');
+
+  // Fotos de factura
+  const gridF = document.getElementById('c-fotos-factura');
+  gridF.innerHTML = fotosFactura.map((foto,i) => `
+    <div class="multi-upload-slot" onclick="${foto?'':`document.getElementById('c-fi-f${i}').click()`}">
+      ${foto
+        ? `<img src="${foto}"><button class="multi-upload-remove" onclick="event.stopPropagation();quitarFotoCierre('factura',${i})">×</button>`
+        : `<div class="multi-upload-slot-empty">+</div>`}
+    </div>
+  `).join('');
+}
+
+function quitarFotoCierre(tipo, idx) {
+  if (tipo==='trabajo') fotosTrabajo[idx] = null;
+  else fotosFactura[idx] = null;
+  renderFotosCierre();
+}
+
+function prevCierre(input, tipo, idx) {
   const file = input.files[0];
   if (!file) return;
   const r = new FileReader();
   r.onload = ev => {
-    imgCierre = ev.target.result;
-    document.getElementById('c-prev').src = imgCierre;
-    document.getElementById('c-prev').style.display='block';
+    if (tipo==='trabajo') fotosTrabajo[idx] = ev.target.result;
+    else fotosFactura[idx] = ev.target.result;
+    renderFotosCierre();
   };
   r.readAsDataURL(file);
+  input.value = '';
 }
 
 function confirmarCierre() {
@@ -3200,7 +3343,9 @@ function confirmarCierre() {
   if (idx!==-1) {
     datos[idx].estado='Completado';
     datos[idx].desc_cierre=desc;
-    datos[idx].img_cierre=imgCierre||null;
+    datos[idx].fotos_trabajo=fotosTrabajo.filter(f=>f);
+    datos[idx].fotos_factura=fotosFactura.filter(f=>f);
+    datos[idx].img_cierre=fotosTrabajo.find(f=>f)||null; // compatibilidad
     datos[idx].motivo_espera='';
     guardarUnaEmergencia(datos[idx]);
     cerrar('modal-cierre');
