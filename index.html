@@ -1335,7 +1335,71 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
   color: var(--texto-dim);
   font-size: 13px;
 }
+
+/* ─── BANNER INSTALAR APP ─── */
+.install-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 400px;
+  margin: 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(100px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+.install-banner-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  color: var(--negro);
+  flex-shrink: 0;
+}
+.install-banner-text { flex: 1; }
+.install-banner-title { font-size: 13px; font-weight: 700; color: var(--blanco); }
+.install-banner-sub { font-size: 11px; color: var(--texto-dim); margin-top: 2px; }
+.install-banner-btn {
+  background: var(--gold);
+  color: var(--negro);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.install-banner-close {
+  background: none;
+  border: none;
+  color: var(--texto-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
 </style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
 
@@ -1873,29 +1937,30 @@ function iniciarGeolocalizacion() {
         lng: pos.coords.longitude,
         ts: Date.now()
       };
-      // Guardar en storage compartido
-      try {
-        const locs = JSON.parse(localStorage.getItem('sj-mega-locs') || '{}');
-        locs[uid] = tecUbicaciones[uid];
-        localStorage.setItem('sj-mega-locs', JSON.stringify(locs));
-      } catch(e) {}
+      // Guardar en Firestore (compartido entre dispositivos)
+      db.collection('ubicaciones').doc(uid).set(tecUbicaciones[uid]).catch(e=>{});
     },
     err => console.log('Geo error:', err),
     { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
   );
 }
 
+// Escuchar ubicaciones en tiempo real desde Firestore
+db.collection('ubicaciones').onSnapshot(snapshot => {
+  const ahora = Date.now();
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    if (ahora - data.ts < 30 * 60 * 1000) {
+      tecUbicaciones[doc.id] = data;
+    }
+  });
+  // Re-renderizar si está en la página de ubicaciones
+  const pagActiva = document.querySelector('.pagina.activa')?.id;
+  if (pagActiva === 'pag-ubicaciones') renderUbicaciones();
+}, err => console.log('Error ubicaciones:', err));
+
 function cargarUbicaciones() {
-  try {
-    const locs = JSON.parse(localStorage.getItem('sj-mega-locs') || '{}');
-    // Solo mostrar ubicaciones de los últimos 30 minutos
-    const ahora = Date.now();
-    Object.keys(locs).forEach(uid => {
-      if (ahora - locs[uid].ts < 30 * 60 * 1000) {
-        tecUbicaciones[uid] = locs[uid];
-      }
-    });
-  } catch(e) {}
+  // Las ubicaciones ya se mantienen actualizadas via onSnapshot arriba
 }
 
 function calcularDistancia(lat1, lng1, lat2, lng2) {
@@ -2004,9 +2069,50 @@ function renderUbicaciones() {
 // ══════════════════════════════════════════
 // SISTEMA DE NOTIFICACIONES (Web Push simulado)
 // ══════════════════════════════════════════
-function solicitarPermisoNotificaciones() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
+// ══════════════════════════════════════════
+// NOTIFICACIONES PUSH (Firebase Cloud Messaging)
+// ══════════════════════════════════════════
+let fcmToken = null;
+
+async function solicitarPermisoNotificaciones() {
+  if (!('Notification' in window)) return;
+
+  try {
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted') {
+      console.log('Permiso de notificaciones denegado');
+      return;
+    }
+
+    // Registrar service worker
+    const registration = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if (token && sesion) {
+      fcmToken = token;
+      // Guardar el token de este usuario en Firestore
+      await db.collection('fcm_tokens').doc(sesion.id).set({
+        token: token,
+        nombre: sesion.nombre,
+        actualizado: new Date().toISOString()
+      });
+      console.log('Token FCM registrado para', sesion.id);
+    }
+
+    // Escuchar notificaciones en primer plano (app abierta)
+    messaging.onMessage(payload => {
+      enviarNotificacion(payload.notification.title, payload.notification.body);
+      if (sesion?.rol !== 'admin') renderMisCasos();
+    });
+
+  } catch(e) {
+    console.error('Error configurando notificaciones:', e);
   }
 }
 
@@ -2019,38 +2125,30 @@ function enviarNotificacion(titulo, cuerpo) {
   }
 }
 
-function notificarTecnico(tecnicoId, ticket, tienda, descripcion) {
-  // Guardar notificación pendiente en localStorage para ese técnico
-  const key = 'sj-notif-' + tecnicoId;
-  const notifs = JSON.parse(localStorage.getItem(key) || '[]');
-  notifs.push({
-    ticket, tienda, descripcion,
-    ts: Date.now(),
-    leida: false
-  });
-  localStorage.setItem(key, JSON.stringify(notifs));
+// Notificar a un técnico — guarda en cola de Firestore para que
+// una Cloud Function (o el propio cliente) la envíe vía FCM
+async function notificarTecnico(tecnicoId, ticket, tienda, descripcion) {
+  try {
+    await db.collection('notificaciones_pendientes').add({
+      destinatario: tecnicoId,
+      titulo: '🚨 Nueva Emergencia - SOJIFAM',
+      cuerpo: `Tiquete #${ticket} · ${tienda}\n${descripcion || ''}`,
+      ticket, tienda, descripcion,
+      ts: Date.now(),
+      enviada: false
+    });
+  } catch(e) {
+    console.error('Error creando notificación:', e);
+  }
 
-  // Si el técnico está en sesión activa, notificar en el navegador
+  // Si el técnico está con la app abierta en este momento, notificar directo
   if (sesion && sesion.id === tecnicoId) {
-    enviarNotificacion('🚨 Nueva Emergencia - SOJIFAM', `Tiquete #${ticket} · ${tienda}\n${descripcion}`);
+    enviarNotificacion('🚨 Nueva Emergencia - SOJIFAM', `Tiquete #${ticket} · ${tienda}`);
   }
 }
 
 function verificarNotificacionesPropias() {
-  if (!sesion) return;
-  const key = 'sj-notif-' + sesion.id;
-  const notifs = JSON.parse(localStorage.getItem(key) || '[]');
-  const noLeidas = notifs.filter(n => !n.leida);
-
-  if (noLeidas.length > 0) {
-    noLeidas.forEach(n => {
-      enviarNotificacion('🚨 Nueva Emergencia - SOJIFAM', `Tiquete #${n.ticket} · ${n.tienda}`);
-    });
-    // Marcar como leídas
-    notifs.forEach(n => n.leida = true);
-    localStorage.setItem(key, JSON.stringify(notifs));
-    renderMisCasos();
-  }
+  // Ya no es necesario: Firestore onSnapshot + FCM manejan esto en tiempo real
 }
 
 
@@ -2226,7 +2324,6 @@ const USUARIOS = {
 };
 
 let sesion = null;
-let datos = JSON.parse(localStorage.getItem('sj-mega-v2') || '[]');
 let filtroActual = 'todos';
 let editandoId = null;
 let cierreId = null;
@@ -2234,11 +2331,80 @@ let esperaId = null;
 let imgTiquete = '';
 let imgCierre = '';
 
-// Sin datos de ejemplo
+// ══════════════════════════════════════════
+// FIREBASE — CONFIGURACIÓN Y CONEXIÓN
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAP2NizrWa7kwhW1ys3poMEQoEmNDd7dmw",
+  authDomain: "sojifam-emergencias.firebaseapp.com",
+  projectId: "sojifam-emergencias",
+  storageBucket: "sojifam-emergencias.firebasestorage.app",
+  messagingSenderId: "1058585278400",
+  appId: "1:1058585278400:web:46f28b76094fc7ad713a25"
+};
 
-function guardarLocal() {
-  localStorage.setItem('sj-mega-v2', JSON.stringify(datos));
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const VAPID_KEY = "BKkOHggZAwAoa42OQpqzqhr5L3BUqpY-woWIoNh6ctBkCBO4GY_3evWaPg64dTNvdMr8S8E9SR8rvrrb3dkeAYw";
+
+let datos = [];
+let firestoreReady = false;
+
+// Escuchar cambios en tiempo real desde Firestore
+db.collection('emergencias').orderBy('id').onSnapshot(snapshot => {
+  datos = snapshot.docs.map(doc => ({ ...doc.data(), _docId: doc.id }));
+  firestoreReady = true;
+  // Re-renderizar la página actual si la app ya inició
+  if (sesion) {
+    const pagActiva = document.querySelector('.pagina.activa')?.id;
+    if (pagActiva === 'pag-dashboard') renderTabla();
+    if (pagActiva === 'pag-miscasos') renderMisCasos();
+    if (pagActiva === 'pag-stats') renderStats();
+  }
+}, err => {
+  console.error('Error Firestore:', err);
+  toast('⚠️ Error de conexión con la base de datos');
+});
+
+// Guardar/actualizar una emergencia en Firestore
+async function guardarLocal() {
+  // Esta función ahora sincroniza con Firestore en vez de localStorage
+  for (const item of datos) {
+    const docId = item._docId || 'em_' + item.id;
+    const data = { ...item };
+    delete data._docId;
+    try {
+      await db.collection('emergencias').doc(docId).set(data);
+    } catch(e) {
+      console.error('Error guardando:', e);
+      toast('⚠️ Error guardando en la nube');
+    }
+  }
 }
+
+// Guardar un solo documento (más eficiente)
+async function guardarUnaEmergencia(item) {
+  const docId = item._docId || 'em_' + item.id;
+  const data = { ...item };
+  delete data._docId;
+  try {
+    await db.collection('emergencias').doc(docId).set(data);
+  } catch(e) {
+    console.error('Error guardando:', e);
+    toast('⚠️ Error guardando en la nube');
+  }
+}
+
+// Eliminar una emergencia
+async function eliminarEmergenciaFirestore(item) {
+  const docId = item._docId || 'em_' + item.id;
+  try {
+    await db.collection('emergencias').doc(docId).delete();
+  } catch(e) {
+    console.error('Error eliminando:', e);
+  }
+}
+
 
 // ══════════════════════════════════════════
 // LOGIN / SESIÓN
@@ -2268,11 +2434,12 @@ function login() {
   construirNav();
   ir(sesion.rol === 'admin' ? 'pag-dashboard' : 'pag-miscasos');
 
-  // Iniciar geolocalización y notificaciones
+  // Iniciar geolocalización y notificaciones push
   solicitarPermisoNotificaciones();
   iniciarGeolocalizacion();
-  verificarNotificacionesPropias();
-  setInterval(verificarNotificacionesPropias, 30000); // revisar cada 30s
+
+  // Mostrar banner de instalación si está disponible
+  if (deferredPrompt) document.getElementById('install-banner').style.display = 'flex';
 }
 
 function salir() {
@@ -2747,10 +2914,11 @@ function guardar() {
     img_tiquete: imgTiquete || null
   };
 
+  let itemFinal;
   if (editandoId !== null) {
     const idx = datos.findIndex(d=>d.id===editandoId);
     const anterior = datos[idx];
-    if (idx!==-1) datos[idx] = { ...datos[idx], ...obj };
+    itemFinal = { ...datos[idx], ...obj };
     // Notificar si cambió el técnico asignado
     if (obj.tecnico && obj.tecnico !== anterior.tecnico) {
       notificarTecnico(obj.tecnico, obj.ticket, obj.tienda, obj.descripcion);
@@ -2758,13 +2926,14 @@ function guardar() {
     toast('✅ Emergencia actualizada');
   } else {
     const maxId = datos.length ? Math.max(...datos.map(d=>d.id)) : 0;
-    datos.push({ id: maxId+1, ...obj, img_cierre:null, desc_cierre:'', motivo_espera:'', creado: new Date().toISOString() });
+    itemFinal = { id: maxId+1, ...obj, img_cierre:null, desc_cierre:'', motivo_espera:'', creado: new Date().toISOString() };
     // Notificar al técnico asignado
     if (obj.tecnico) {
       notificarTecnico(obj.tecnico, obj.ticket, obj.tienda, obj.descripcion);
     }
     toast('✅ Emergencia registrada');
   }
+  guardarUnaEmergencia(itemFinal);
 
   guardarLocal();
   cerrar('modal-nuevo');
@@ -2943,7 +3112,7 @@ function verDetalle(id) {
 
 function cambiarEstado(id, nuevoEstado) {
   const idx = datos.findIndex(d=>d.id===id);
-  if (idx!==-1) { datos[idx].estado=nuevoEstado; guardarLocal(); renderTabla(); toast(`✅ Estado: ${nuevoEstado}`); }
+  if (idx!==-1) { datos[idx].estado=nuevoEstado; guardarUnaEmergencia(datos[idx]); renderTabla(); toast(`✅ Estado: ${nuevoEstado}`); }
 }
 
 // ══════════════════════════════════════════
@@ -2951,12 +3120,12 @@ function cambiarEstado(id, nuevoEstado) {
 // ══════════════════════════════════════════
 function iniciarCaso(id) {
   const idx = datos.findIndex(d=>d.id===id);
-  if (idx!==-1) { datos[idx].estado='En Curso'; guardarLocal(); renderMisCasos(); toast('▶ Caso iniciado'); }
+  if (idx!==-1) { datos[idx].estado='En Curso'; guardarUnaEmergencia(datos[idx]); renderMisCasos(); toast('▶ Caso iniciado'); }
 }
 
 function reanudar(id) {
   const idx = datos.findIndex(d=>d.id===id);
-  if (idx!==-1) { datos[idx].estado='En Curso'; datos[idx].motivo_espera=''; guardarLocal(); renderMisCasos(); toast('▶ Caso reanudado'); }
+  if (idx!==-1) { datos[idx].estado='En Curso'; datos[idx].motivo_espera=''; guardarUnaEmergencia(datos[idx]); renderMisCasos(); toast('▶ Caso reanudado'); }
 }
 
 function abrirEspera(id) {
@@ -2972,7 +3141,7 @@ function confirmarEspera() {
   if (idx!==-1) {
     datos[idx].estado='En Espera';
     datos[idx].motivo_espera=motivo;
-    guardarLocal();
+    guardarUnaEmergencia(datos[idx]);
     cerrar('modal-espera');
     renderMisCasos();
     toast('⏸ Caso en espera');
@@ -3009,7 +3178,7 @@ function confirmarCierre() {
     datos[idx].desc_cierre=desc;
     datos[idx].img_cierre=imgCierre||null;
     datos[idx].motivo_espera='';
-    guardarLocal();
+    guardarUnaEmergencia(datos[idx]);
     cerrar('modal-cierre');
     renderMisCasos();
     toast('✅ Caso cerrado correctamente');
@@ -3021,8 +3190,8 @@ function confirmarCierre() {
 // ══════════════════════════════════════════
 function eliminarE(id) {
   if (!confirm('¿Eliminar esta emergencia?')) return;
-  datos = datos.filter(d=>d.id!==id);
-  guardarLocal();
+  const item = datos.find(d=>d.id===id);
+  if (item) eliminarEmergenciaFirestore(item);
   renderTabla();
   toast('🗑️ Eliminado');
 }
@@ -3047,5 +3216,16 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 </script>
+
+<!-- Banner Instalar App -->
+<div class="install-banner" id="install-banner" style="display:none">
+  <div class="install-banner-icon">SF</div>
+  <div class="install-banner-text">
+    <div class="install-banner-title">Instalar SOJIFAM</div>
+    <div class="install-banner-sub">Agregalo a tu pantalla de inicio</div>
+  </div>
+  <button class="install-banner-btn" onclick="instalarApp()">Instalar</button>
+  <button class="install-banner-close" onclick="document.getElementById('install-banner').style.display='none'">×</button>
+</div>
 </body>
 </html>
