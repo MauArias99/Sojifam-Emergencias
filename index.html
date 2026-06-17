@@ -233,6 +233,26 @@ body {
 
 .btn-salir:hover { border-color: var(--rojo); color: var(--rojo); }
 
+.btn-ocupado {
+  background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.35);
+  color: var(--completado);
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Montserrat', sans-serif;
+  white-space: nowrap;
+}
+.btn-ocupado:hover { opacity: 0.85; }
+.btn-ocupado.activo {
+  background: rgba(245,166,35,.14);
+  border: 1px solid rgba(245,166,35,.35);
+  color: var(--en-espera);
+}
+
 /* ─── PÁGINAS ─── */
 .pagina { display: none; padding: 20px; max-width: 1300px; margin: 0 auto; width: 100%; }
 .pagina.activa { display: block; }
@@ -891,6 +911,34 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
   letter-spacing: 1px;
 }
 
+/* Pills de estado de técnico en dashboard */
+.tec-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel2);
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  padding: 6px 12px 6px 6px;
+}
+.tec-pill.ocupado { border-color: rgba(245,166,35,.4); background: rgba(245,166,35,.06); }
+.tec-pill-av {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 10px;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.tec-pill-av img { width:100%;height:100%;object-fit:cover; }
+.tec-pill-info { display: flex; flex-direction: column; line-height: 1.2; }
+.tec-pill-nombre { font-size: 12px; color: var(--blanco); font-weight: 600; }
+.tec-pill-estado { font-size: 10px; color: var(--texto-dim); }
+.tec-pill-estado.ocupado-txt { color: var(--en-espera); }
+.tec-pill-estado.disp-txt { color: var(--completado); }
+
 /* Notif badge */
 .notif-badge {
   background: var(--rojo);
@@ -1447,6 +1495,7 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
 
 <!-- PWA Manifest -->
 <link rel="manifest" href="manifest.json">
@@ -1489,6 +1538,7 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
     <div class="h-sep"></div>
     <nav class="h-nav" id="h-nav"></nav>
     <div class="h-right">
+      <button class="btn-ocupado" id="btn-ocupado" onclick="abrirOcupado()" style="display:none">🟢 Disponible</button>
       <div class="h-usuario" onclick="ir('pag-config')" style="cursor:pointer;transition:opacity 0.2s" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'" title="Configuración de perfil">
         <div class="h-avatar" id="h-avatar"></div>
         <div>
@@ -1508,6 +1558,12 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
       <div class="stat s-curso"><div class="stat-n" id="s-curso">0</div><div class="stat-l">En Curso</div></div>
       <div class="stat s-espera"><div class="stat-n" id="s-espera">0</div><div class="stat-l">En Espera</div></div>
       <div class="stat s-comp"><div class="stat-n" id="s-comp">0</div><div class="stat-l">Completado</div></div>
+    </div>
+
+    <!-- Estado de técnicos (solo admin) -->
+    <div class="config-card" id="estado-tecnicos-panel" style="margin-bottom:16px;padding:14px 18px">
+      <div class="loc-title" style="margin-bottom:10px">👷 Estado de técnicos</div>
+      <div id="estado-tecnicos-lista" style="display:flex;gap:10px;flex-wrap:wrap"></div>
     </div>
 
     <!-- Panel de ubicaciones (solo admin) -->
@@ -1936,6 +1992,52 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
   </div>
 </div>
 
+<!-- ═══ MODAL REASIGNAR ═══ -->
+<div class="overlay" id="modal-reasignar">
+  <div class="modal" style="max-width:420px">
+    <div class="m-head">
+      <div class="m-titulo">Reasignar Caso</div>
+      <button class="m-close" onclick="cerrar('modal-reasignar')">×</button>
+    </div>
+    <div class="m-body">
+      <p style="font-size:13px;color:var(--texto-dim);margin-bottom:16px">Asigná este caso a otro técnico disponible.</p>
+      <div class="fg">
+        <label>Nuevo técnico</label>
+        <select id="r-tecnico"></select>
+      </div>
+      <div class="fg">
+        <label>Motivo (opcional)</label>
+        <textarea id="r-motivo" placeholder="¿Por qué se reasigna? (ej: orden de Carlos, cambio de zona...)" style="min-height:70px"></textarea>
+      </div>
+    </div>
+    <div class="m-footer">
+      <button class="btn-sec" onclick="cerrar('modal-reasignar')">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarReasignar()">↪ Reasignar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL OCUPADO ═══ -->
+<div class="overlay" id="modal-ocupado">
+  <div class="modal" style="max-width:420px">
+    <div class="m-head">
+      <div class="m-titulo" id="ocupado-titulo">Marcarme como Ocupado</div>
+      <button class="m-close" onclick="cerrar('modal-ocupado')">×</button>
+    </div>
+    <div class="m-body">
+      <p style="font-size:13px;color:var(--texto-dim);margin-bottom:16px" id="ocupado-desc-info">Mientras estés ocupado, no se te sugerirá como técnico cercano para nuevas emergencias. El admin va a ver tu estado.</p>
+      <div class="fg" id="ocupado-motivo-wrap">
+        <label>Motivo / ubicación</label>
+        <textarea id="o-motivo" placeholder="Ej: Fijo en Megasuper Atenas hasta las 3pm..." style="min-height:80px"></textarea>
+      </div>
+    </div>
+    <div class="m-footer">
+      <button class="btn-sec" onclick="cerrar('modal-ocupado')">Cancelar</button>
+      <button class="btn-primary" style="background:var(--en-espera)" id="ocupado-btn-confirmar" onclick="confirmarOcupado()">🟡 Marcarme Ocupado</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ═══ MODAL TÉCNICO CERCANO ═══ -->
 <div class="overlay" id="modal-cercano">
@@ -1969,7 +2071,7 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
 // cada vez que se suba una actualización
 // para que se actualice sola en todos los dispositivos
 // ══════════════════════════════════════════
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.0.7';
 
 // ══════════════════════════════════════════
 // USUARIOS Y CONTRASEÑAS
@@ -2004,6 +2106,7 @@ const firebaseConfig = {
 };
 
 let db = null;
+let functionsApp = null;
 const VAPID_KEY = "BKkOHggZAwAoa42OQpqzqhr5L3BUqpY-woWIoNh6ctBkCBO4GY_3evWaPg64dTNvdMr8S8E9SR8rvrrb3dkeAYw";
 
 let datos = [];
@@ -2012,6 +2115,7 @@ let firestoreReady = false;
 try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
+  functionsApp = firebase.app().functions('us-central1');
 
   // Escuchar cambios en tiempo real desde Firestore
   db.collection('emergencias').orderBy('id').onSnapshot(snapshot => {
@@ -2137,12 +2241,99 @@ function calcularDistancia(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// ══════════════════════════════════════════
+// ESTADO "OCUPADO" — el técnico se marca como
+// no disponible temporalmente sin desconectarse
+// ══════════════════════════════════════════
+let tecOcupados = {}; // { uid: { activo, motivo, desde } }
+
+if (db) db.collection('ocupados').onSnapshot(snapshot => {
+  tecOcupados = {};
+  snapshot.docs.forEach(doc => { tecOcupados[doc.id] = doc.data(); });
+  actualizarBotonOcupado();
+  renderEstadoTecnicos();
+  const pagActiva = document.querySelector('.pagina.activa')?.id;
+  if (pagActiva === 'pag-ubicaciones') renderUbicaciones();
+}, err => console.log('Error ocupados:', err));
+
+function renderEstadoTecnicos() {
+  if (!sesion || sesion.rol !== 'admin') return;
+  const cont = document.getElementById('estado-tecnicos-lista');
+  if (!cont) return;
+
+  const tecnicos = ['mauricio','carlos','bayardo','alejandro','gerber'];
+  cont.innerHTML = tecnicos.map(uid => {
+    const u = USUARIOS[uid];
+    const cfg = getCfg(uid);
+    const nombre = cfg.nombre || u.nombre;
+    const foto = cfg.foto || null;
+    const estado = tecOcupados[uid];
+    const ocupado = estado && estado.activo;
+
+    return `<div class="tec-pill ${ocupado?'ocupado':''}" title="${ocupado && estado.motivo ? estado.motivo : ''}">
+      <div class="tec-pill-av" style="background:${u.color||'var(--borde2)'}">${foto?`<img src="${foto}">`:u.initials}</div>
+      <div class="tec-pill-info">
+        <div class="tec-pill-nombre">${nombre}</div>
+        <div class="tec-pill-estado ${ocupado?'ocupado-txt':'disp-txt'}">${ocupado ? '🟡 Ocupado'+(estado.motivo?': '+estado.motivo.slice(0,28)+(estado.motivo.length>28?'…':''):'') : '🟢 Disponible'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function actualizarBotonOcupado() {
+  if (!sesion) return;
+  const btn = document.getElementById('btn-ocupado');
+  if (!btn) return;
+  btn.style.display = 'inline-block';
+  const estado = tecOcupados[sesion.id];
+  if (estado && estado.activo) {
+    btn.textContent = '🟡 Ocupado';
+    btn.classList.add('activo');
+  } else {
+    btn.textContent = '🟢 Disponible';
+    btn.classList.remove('activo');
+  }
+}
+
+function abrirOcupado() {
+  const estado = tecOcupados[sesion.id];
+  const yaOcupado = estado && estado.activo;
+
+  document.getElementById('ocupado-titulo').textContent = yaOcupado ? 'Volver a estar Disponible' : 'Marcarme como Ocupado';
+  document.getElementById('ocupado-desc-info').textContent = yaOcupado
+    ? 'Vas a volver a estar disponible para recibir sugerencias de técnico cercano.'
+    : 'Mientras estés ocupado, no se te sugerirá como técnico cercano para nuevas emergencias. El admin va a ver tu estado.';
+  document.getElementById('ocupado-motivo-wrap').style.display = yaOcupado ? 'none' : 'block';
+  document.getElementById('o-motivo').value = '';
+  document.getElementById('ocupado-btn-confirmar').textContent = yaOcupado ? '🟢 Marcarme Disponible' : '🟡 Marcarme Ocupado';
+  document.getElementById('ocupado-btn-confirmar').style.background = yaOcupado ? 'var(--completado)' : 'var(--en-espera)';
+
+  abrir('modal-ocupado');
+}
+
+async function confirmarOcupado() {
+  const estado = tecOcupados[sesion.id];
+  const yaOcupado = estado && estado.activo;
+
+  if (yaOcupado) {
+    // Marcar como disponible
+    if (db) await db.collection('ocupados').doc(sesion.id).set({ activo: false, motivo: '', desde: Date.now() });
+    toast('🟢 Estás disponible de nuevo');
+  } else {
+    const motivo = document.getElementById('o-motivo').value.trim();
+    if (db) await db.collection('ocupados').doc(sesion.id).set({ activo: true, motivo, desde: Date.now() });
+    toast('🟡 Marcado como ocupado');
+  }
+  cerrar('modal-ocupado');
+}
+
 function encontrarTecnicoCercano(tienda) {
   cargarUbicaciones();
   const coords = TIENDAS_COORDS[tienda];
   if (!coords) return null;
 
-  const tecnicos = ['bayardo','alejandro','gerber','mauricio','carlos'];
+  const tecnicos = ['bayardo','alejandro','gerber','mauricio','carlos']
+    .filter(uid => !(tecOcupados[uid] && tecOcupados[uid].activo));
   let mejorTec = null;
   let mejorDist = Infinity;
 
@@ -2216,14 +2407,16 @@ function renderUbicaciones() {
     const ahora = Date.now();
     const activo = loc && (ahora - loc.ts < 30*60*1000);
     const hace = loc ? Math.round((ahora - loc.ts)/60000) : null;
+    const ocupado = tecOcupados[uid] && tecOcupados[uid].activo;
 
     return `<div class="tec-loc-row">
       <div class="tec-loc-av" style="background:${u.color||'var(--borde2)'}">${u.initials}</div>
       <div class="tec-loc-info">
-        <div class="tec-loc-nombre">${u.nombre} <span style="font-size:10px;color:${u.rol==='admin'?'var(--en-espera)':'var(--en-curso)'}">${u.rol==='admin'?'Admin':'Técnico'}</span></div>
+        <div class="tec-loc-nombre">${u.nombre} <span style="font-size:10px;color:${u.rol==='admin'?'var(--en-espera)':'var(--en-curso)'}">${u.rol==='admin'?'Admin':'Técnico'}</span>${ocupado ? ' <span class="cercano-badge">OCUPADO</span>' : ''}</div>
         <div class="tec-loc-dist">${activo
           ? '🟢 Activo · hace '+hace+'min · '+loc.lat.toFixed(4)+', '+loc.lng.toFixed(4)
           : '⚫ Sin ubicación activa'}</div>
+        ${ocupado && tecOcupados[uid].motivo ? `<div class="tec-loc-dist" style="color:var(--en-espera);margin-top:2px">📋 ${tecOcupados[uid].motivo}</div>` : ''}
       </div>
       ${activo && loc ? `<a href="https://www.google.com/maps?q=${loc.lat},${loc.lng}" target="_blank" class="tec-loc-btn">Ver en Maps</a>` : ''}
     </div>`;
@@ -2322,11 +2515,51 @@ function verificarNotificacionesPropias() {
 // ══════════════════════════════════════════
 let fotoPerfilTemp = null;
 
+// ══════════════════════════════════════════
+// CONFIGURACIÓN DE USUARIOS EN FIRESTORE
+// (nombre, foto, contraseña) — viaja con el
+// usuario sin importar el dispositivo
+// ══════════════════════════════════════════
+let usuariosCfg = {}; // { uid: { nombre, foto, pass } }
+let usuariosCfgReady = false;
+
+if (db) db.collection('usuarios_cfg').onSnapshot(snapshot => {
+  snapshot.docs.forEach(doc => {
+    usuariosCfg[doc.id] = doc.data();
+    if (USUARIOS[doc.id]) {
+      if (doc.data().nombre) USUARIOS[doc.id].nombre = doc.data().nombre;
+      if (doc.data().pass) USUARIOS[doc.id].pass = doc.data().pass;
+    }
+  });
+  usuariosCfgReady = true;
+  if (sesion) {
+    actualizarHeaderAvatar();
+    renderEstadoTecnicos();
+    const pagActiva = document.querySelector('.pagina.activa')?.id;
+    if (pagActiva === 'pag-config') { renderGestionUsuarios(); }
+  }
+}, err => console.log('Error usuarios_cfg:', err));
+
+function getCfg(uid) {
+  return usuariosCfg[uid] || {};
+}
+
+async function setCfg(uid, datosCfg) {
+  usuariosCfg[uid] = { ...usuariosCfg[uid], ...datosCfg };
+  if (!db) { toast('⚠️ Sin conexión a la base de datos'); return; }
+  try {
+    await db.collection('usuarios_cfg').doc(uid).set(usuariosCfg[uid], { merge: true });
+  } catch(e) {
+    console.error('Error guardando config de usuario:', e);
+    toast('⚠️ Error guardando en la nube');
+  }
+}
+
 function cargarConfigPerfil() {
   if (!sesion) return;
   // Cargar datos guardados
-  const cfg = JSON.parse(localStorage.getItem('sj-cfg-' + sesion.id) || '{}');
-  
+  const cfg = getCfg(sesion.id);
+
   document.getElementById('cfg-nombre').value = cfg.nombre || sesion.nombre;
   document.getElementById('cfg-usuario').value = sesion.id;
   document.getElementById('cfg-pass-actual').value = '';
@@ -2372,7 +2605,8 @@ function guardarConfig() {
 
   if (!nuevoNombre) { toast('⚠️ El nombre no puede estar vacío'); return; }
 
-  const cfg = JSON.parse(localStorage.getItem('sj-cfg-' + sesion.id) || '{}');
+  const cfg = getCfg(sesion.id);
+  const cambios = {};
 
   // Cambiar contraseña si se llenó
   if (passActual || passNueva) {
@@ -2380,22 +2614,22 @@ function guardarConfig() {
       toast('❌ Contraseña actual incorrecta'); return;
     }
     if (passNueva.length < 6) { toast('⚠️ La nueva contraseña debe tener al menos 6 caracteres'); return; }
-    cfg.pass = passNueva;
+    cambios.pass = passNueva;
     USUARIOS[sesion.id].pass = passNueva;
     toast('✅ Contraseña actualizada');
   }
 
   // Guardar nombre
-  cfg.nombre = nuevoNombre;
+  cambios.nombre = nuevoNombre;
   USUARIOS[sesion.id].nombre = nuevoNombre;
   sesion.nombre = nuevoNombre;
 
   // Guardar foto
   if (fotoPerfilTemp !== null) {
-    cfg.foto = fotoPerfilTemp;
+    cambios.foto = fotoPerfilTemp;
   }
 
-  localStorage.setItem('sj-cfg-' + sesion.id, JSON.stringify(cfg));
+  setCfg(sesion.id, cambios);
 
   // Actualizar header
   actualizarHeaderAvatar();
@@ -2407,7 +2641,7 @@ function guardarConfig() {
 }
 
 function actualizarHeaderAvatar() {
-  const cfg = JSON.parse(localStorage.getItem('sj-cfg-' + (sesion?.id || '')) || '{}');
+  const cfg = getCfg(sesion?.id || '');
   const u = USUARIOS[sesion?.id];
   const avatar = document.getElementById('h-avatar');
   if (!avatar || !u) return;
@@ -2443,7 +2677,7 @@ function renderGestionUsuarios() {
   const todos = ['mauricio','carlos','bayardo','alejandro','gerber'];
   lista.innerHTML = todos.map(uid => {
     const u = USUARIOS[uid];
-    const cfg = JSON.parse(localStorage.getItem('sj-cfg-' + uid) || '{}');
+    const cfg = getCfg(uid);
     const foto = cfg.foto || null;
     const nombre = cfg.nombre || u.nombre;
     const esMismo = uid === sesion.id;
@@ -2469,11 +2703,9 @@ function confirmarReset(uid, nombre) {
     toast('⚠️ La contraseña debe tener al menos 6 caracteres');
     return;
   }
-  // Actualizar en USUARIOS y en cfg guardada
+  // Actualizar en USUARIOS y en Firestore
   USUARIOS[uid].pass = nueva;
-  const cfg = JSON.parse(localStorage.getItem('sj-cfg-' + uid) || '{}');
-  cfg.pass = nueva;
-  localStorage.setItem('sj-cfg-' + uid, JSON.stringify(cfg));
+  setCfg(uid, { pass: nueva });
   toast(`✅ Contraseña de ${nombre} restablecida`);
 }
 
@@ -2486,7 +2718,7 @@ async function guardarLocal() {
     const data = { ...item };
     delete data._docId;
     try {
-      await db.collection('emergencias').doc(docId).set(data);
+      await db.collection('emergencias').doc(docId).set(data, { merge: true });
     } catch(e) {
       console.error('Error guardando:', e);
       toast('⚠️ Error guardando en la nube');
@@ -2495,13 +2727,16 @@ async function guardarLocal() {
 }
 
 // Guardar un solo documento (más eficiente)
+// merge:true evita que dos ediciones simultáneas (ej. reasignar + cerrar caso
+// al mismo tiempo desde dos dispositivos) se borren entre sí — combina los
+// campos en vez de sobrescribir el documento completo.
 async function guardarUnaEmergencia(item) {
   if (!db) { toast('⚠️ Sin conexión a la base de datos'); return; }
   const docId = item._docId || 'em_' + item.id;
   const data = { ...item };
   delete data._docId;
   try {
-    await db.collection('emergencias').doc(docId).set(data);
+    await db.collection('emergencias').doc(docId).set(data, { merge: true });
   } catch(e) {
     console.error('Error guardando:', e);
     toast('⚠️ Error guardando en la nube');
@@ -2541,6 +2776,13 @@ function login() {
   const err = document.getElementById('login-err');
 
   if (!uid) { err.textContent = 'Seleccioná un usuario'; return; }
+
+  if (db && !usuariosCfgReady) {
+    err.textContent = 'Sincronizando datos, esperá un momento e intentá de nuevo...';
+    setTimeout(() => { if (usuariosCfgReady) err.textContent = ''; }, 1500);
+    return;
+  }
+
   const u = USUARIOS[uid];
   if (!u || pass !== u.pass) { err.textContent = 'Contraseña incorrecta'; return; }
 
@@ -2564,6 +2806,7 @@ function login() {
   solicitarPermisoNotificaciones();
   iniciarGeolocalizacion();
   iniciarChequeoActualizacion();
+  actualizarBotonOcupado();
 
   // Mostrar banner de instalación si está disponible
   if (deferredPrompt) document.getElementById('install-banner').style.display = 'flex';
@@ -2625,6 +2868,7 @@ function filtrar(f, btn) {
 }
 
 function renderTabla() {
+  renderEstadoTecnicos();
   const q = (document.getElementById('buscar-inp')?.value || '').toLowerCase();
   let rows = [...datos];
 
@@ -2705,6 +2949,7 @@ function renderMisCasos() {
             ${e.estado === 'En Curso'  ? `<button class="btn-sm morado" onclick="abrirEspera(${e.id})">⏸ Espera</button>` : ''}
             ${e.estado === 'En Espera' ? `<button class="btn-sm verde" onclick="reanudar(${e.id})">▶ Reanudar</button>` : ''}
             ${e.estado !== 'Pendiente' ? `<button class="btn-sm verde" onclick="abrirCierre(${e.id})">✓ Cerrar</button>` : ''}
+            <button class="btn-sm" style="background:rgba(255,255,255,.08);color:var(--texto)" onclick="abrirReasignar(${e.id})">↪ Reasignar</button>
           ` : '<span style="color:var(--completado);font-size:12px">✓ Finalizado</span>'}
         </div>
       </td>
@@ -2828,7 +3073,7 @@ function renderStats() {
   const maxT = Math.max(...tecnicos.map(t=>df.filter(e=>e.tecnico===t).length), 1);
   document.getElementById('stats-tecnicos').innerHTML = tecnicos.map(t => {
     const u = USUARIOS[t];
-    const cfg = JSON.parse(localStorage.getItem('sj-cfg-'+t)||'{}');
+    const cfg = getCfg(t);
     const foto = cfg.foto || null;
     const nombre = cfg.nombre || u.nombre;
     const total  = df.filter(e=>e.tecnico===t).length;
@@ -2926,7 +3171,7 @@ function renderStats() {
         <tbody>
           ${histFiltrado.map(e => {
             const u = USUARIOS[e.tecnico];
-            const cfg = e.tecnico ? JSON.parse(localStorage.getItem('sj-cfg-'+e.tecnico)||'{}') : {};
+            const cfg = e.tecnico ? getCfg(e.tecnico) : {};
             const nombre = cfg.nombre || u?.nombre || '—';
             const fecha = e.creado ? new Date(e.creado).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'2-digit'}) : e.fecha || '—';
             return `<tr>
@@ -3052,8 +3297,10 @@ function guardar() {
     }
     toast('✅ Emergencia actualizada');
   } else {
-    const maxId = datos.length ? Math.max(...datos.map(d=>d.id)) : 0;
-    itemFinal = { id: maxId+1, ...obj, img_cierre:null, desc_cierre:'', motivo_espera:'', creado: new Date().toISOString() };
+    // ID único resistente a colisiones aunque dos personas creen un caso
+    // al mismo tiempo desde dispositivos distintos (timestamp + random)
+    const idUnico = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    itemFinal = { id: idUnico, ...obj, img_cierre:null, desc_cierre:'', motivo_espera:'', creado: new Date().toISOString() };
     // Notificar al técnico asignado
     if (obj.tecnico) {
       notificarTecnico(obj.tecnico, obj.ticket, obj.tienda, obj.descripcion);
@@ -3062,7 +3309,6 @@ function guardar() {
   }
   guardarUnaEmergencia(itemFinal);
 
-  guardarLocal();
   cerrar('modal-nuevo');
   renderTabla();
 }
@@ -3090,27 +3336,11 @@ async function procesarImg(input) {
       const b64 = b64full.split(',')[1];
       const mt  = file.type || 'image/jpeg';
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514',
-          max_tokens:1000,
-          messages:[{
-            role:'user',
-            content:[
-              { type:'image', source:{ type:'base64', media_type:mt, data:b64 } },
-              { type:'text', text:`Analizá este tiquete de Mega Super. Respondé SOLO con JSON válido sin texto adicional ni markdown:\n{"ticket":"número sin #","tienda":"nombre completo","fecha":"fecha y hora exacta","descripcion":"descripción del problema","solicitante":"nombre y cargo"}` }
-            ]
-          }]
-        })
-      });
+      if (!functionsApp) throw new Error('Firebase Functions no está disponible');
 
-      const data = await res.json();
-      const txt = data.content.map(i=>i.text||'').join('').trim();
-      let info;
-      try { info = JSON.parse(txt); }
-      catch { const m = txt.match(/\{[\s\S]*\}/); info = m ? JSON.parse(m[0]) : {}; }
+      const llamarProcesarTiquete = functionsApp.httpsCallable('procesarTiquete');
+      const resultado = await llamarProcesarTiquete({ imagenBase64: b64, mediaType: mt });
+      const info = resultado.data || {};
 
       if (info.ticket) document.getElementById('f-tk').value = info.ticket;
       if (info.fecha)  document.getElementById('f-fh').value = info.fecha;
@@ -3146,7 +3376,12 @@ async function procesarImg(input) {
       toast('✅ Datos extraídos automáticamente');
     } catch(err) {
       console.error(err);
-      toast('⚠️ Completá los datos manualmente');
+      const msg = err?.message || '';
+      if (msg.includes('not-found') || msg.includes('NOT_FOUND')) {
+        toast('⚠️ Función no encontrada. Completá los datos manualmente');
+      } else {
+        toast('⚠️ No se pudo leer el tiquete. Completá los datos manualmente');
+      }
     }
 
     document.getElementById('spin').style.display='none';
@@ -3242,6 +3477,7 @@ function verDetalle(id) {
     if (e.estado === 'En Curso')  btns += `<button class="btn-primary" style="background:var(--en-espera)" onclick="cerrar('modal-det');abrirEspera(${e.id})">⏸ Espera</button>`;
     if (e.estado === 'En Espera') btns += `<button class="btn-primary" style="background:var(--en-curso)" onclick="cerrar('modal-det');reanudar(${e.id})">▶ Reanudar</button>`;
     if (e.estado !== 'Pendiente') btns += `<button class="btn-primary" style="background:var(--completado)" onclick="cerrar('modal-det');abrirCierre(${e.id})">✓ Cerrar caso</button>`;
+    btns += `<button class="btn-sec" onclick="cerrar('modal-det');abrirReasignar(${e.id})">↪ Reasignar</button>`;
   }
   footer.innerHTML = btns;
 
@@ -3284,6 +3520,57 @@ function confirmarEspera() {
     renderMisCasos();
     toast('⏸ Caso en espera');
   }
+}
+
+// ══════════════════════════════════════════
+// REASIGNAR CASO A OTRO TÉCNICO
+// ══════════════════════════════════════════
+let reasignarId = null;
+
+function abrirReasignar(id) {
+  reasignarId = id;
+  const caso = datos.find(d=>d.id===id);
+  if (!caso) return;
+
+  const sel = document.getElementById('r-tecnico');
+  const tecnicos = Object.entries(USUARIOS).filter(([uid]) => uid !== sesion.id);
+  sel.innerHTML = tecnicos.map(([uid, u]) => {
+    const cfg = getCfg(uid);
+    const ocupado = tecOcupados[uid];
+    const nombre = cfg.nombre || u.nombre;
+    const etiquetaOcupado = (ocupado && ocupado.activo) ? ' (Ocupado)' : '';
+    return `<option value="${uid}">${nombre}${etiquetaOcupado}</option>`;
+  }).join('');
+
+  document.getElementById('r-motivo').value = '';
+  abrir('modal-reasignar');
+}
+
+function confirmarReasignar() {
+  const nuevoTecnico = document.getElementById('r-tecnico').value;
+  const motivo = document.getElementById('r-motivo').value.trim();
+  const idx = datos.findIndex(d=>d.id===reasignarId);
+  if (idx===-1) return;
+
+  const tecnicoAnterior = datos[idx].tecnico;
+  datos[idx].tecnico = nuevoTecnico;
+  if (motivo) {
+    datos[idx].historial_reasignacion = (datos[idx].historial_reasignacion || []);
+    datos[idx].historial_reasignacion.push({
+      de: tecnicoAnterior,
+      a: nuevoTecnico,
+      motivo,
+      fecha: new Date().toISOString()
+    });
+  }
+  guardarUnaEmergencia(datos[idx]);
+
+  // Notificar al nuevo técnico
+  notificarTecnico(nuevoTecnico, datos[idx].ticket, datos[idx].tienda, datos[idx].descripcion);
+
+  cerrar('modal-reasignar');
+  renderMisCasos();
+  toast(`↪ Caso reasignado a ${USUARIOS[nuevoTecnico]?.nombre || nuevoTecnico}`);
 }
 
 function abrirCierre(id) {
