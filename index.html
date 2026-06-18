@@ -2071,7 +2071,7 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
 // cada vez que se suba una actualización
 // para que se actualice sola en todos los dispositivos
 // ══════════════════════════════════════════
-const APP_VERSION = '1.0.8';
+const APP_VERSION = '1.0.9';
 
 // ══════════════════════════════════════════
 // USUARIOS Y CONTRASEÑAS
@@ -2116,6 +2116,22 @@ try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
   functionsApp = firebase.app().functions('us-central1');
+
+  // Inicializar Firebase Messaging con nuestro propio sw.js desde el arranque.
+  // Si no hacemos esto, el SDK busca 'firebase-messaging-sw.js' en la RAIZ
+  // del dominio (github.io/), no en la subcarpeta de la app — da 404 y eso
+  // interrumpe TODAS las llamadas httpsCallable, no solo las notificaciones.
+  if ('serviceWorker' in navigator && firebase.messaging.isSupported()) {
+    navigator.serviceWorker.register('./sw.js').then(registration => {
+      firebase.messaging().getToken({
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: registration
+      }).catch(() => {
+        // Si no hay permiso de notificaciones todavia, silenciar el error.
+        // El token se obtendra cuando el usuario conceda permiso en login.
+      });
+    }).catch(() => {});
+  }
 
   // Escuchar cambios en tiempo real desde Firestore
   db.collection('emergencias').orderBy('id').onSnapshot(snapshot => {
