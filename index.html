@@ -2071,7 +2071,7 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
 // cada vez que se suba una actualización
 // para que se actualice sola en todos los dispositivos
 // ══════════════════════════════════════════
-const APP_VERSION = '1.0.9';
+const APP_VERSION = '1.1.0';
 
 // ══════════════════════════════════════════
 // USUARIOS Y CONTRASEÑAS
@@ -3352,11 +3352,17 @@ async function procesarImg(input) {
       const b64 = b64full.split(',')[1];
       const mt  = file.type || 'image/jpeg';
 
-      if (!functionsApp) throw new Error('Firebase Functions no está disponible');
-
-      const llamarProcesarTiquete = functionsApp.httpsCallable('procesarTiquete');
-      const resultado = await llamarProcesarTiquete({ imagenBase64: b64, mediaType: mt });
-      const info = resultado.data || {};
+      // Llamada directa a la Cloud Function vía fetch (sin SDK de Firebase Functions)
+      // Esto evita que el SDK intente obtener un token FCM internamente,
+      // lo cual fallaba con 401 e interrumpía toda la llamada.
+      const resp = await fetch('https://us-central1-sojifam-emergencias.cloudfunctions.net/procesarTiquete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: { imagenBase64: b64, mediaType: mt } })
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      const info = json.result || json.data || json || {};
 
       if (info.ticket) document.getElementById('f-tk').value = info.ticket;
       if (info.fecha)  document.getElementById('f-fh').value = info.fecha;
