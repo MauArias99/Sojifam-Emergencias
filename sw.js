@@ -51,7 +51,7 @@ self.addEventListener('notificationclick', event => {
 });
 
 // Cache básico para que la app cargue offline (PWA)
-const CACHE_NAME = 'sojifam-v2';
+const CACHE_NAME = 'sojifam-v3';
 const URLS_TO_CACHE = ['./', './sojifam-megasuper.html'];
 
 self.addEventListener('install', event => {
@@ -66,6 +66,16 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Solo interceptamos peticiones GET de nuestro propio origen (los
+  // archivos de la app: HTML, JS, íconos, etc). Cualquier otra cosa
+  // (llamadas a Cloud Functions, Firestore, FCM, APIs externas, o
+  // métodos POST/PUT) se deja pasar sin tocar. Si no hacemos esto,
+  // el Service Worker puede romper las respuestas "opaque" de esas
+  // peticiones (error: "Failed to convert value to 'Response'") y
+  // las llamadas nunca llegan a destino.
+  if (event.request.method !== 'GET') return;
+  if (new URL(event.request.url).origin !== self.location.origin) return;
+
   // Network-first: siempre intenta traer la versión más reciente
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
