@@ -2071,7 +2071,26 @@ tr.fila:hover { background: rgba(255,255,255,0.025); }
 // cada vez que se suba una actualización
 // para que se actualice sola en todos los dispositivos
 // ══════════════════════════════════════════
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
+
+// ══════════════════════════════════════════
+// PWA — BANNER DE INSTALACIÓN
+// ══════════════════════════════════════════
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+function instalarApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    document.getElementById('install-banner').style.display = 'none';
+  });
+}
 
 // ══════════════════════════════════════════
 // USUARIOS Y CONTRASEÑAS
